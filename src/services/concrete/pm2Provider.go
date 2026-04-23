@@ -6,13 +6,18 @@ import (
 	"os/exec"
 	"server-watcher-app/src/models"
 	enumModels "server-watcher-app/src/models/enum"
+	repositoryConcrete "server-watcher-app/src/repository/concrete"
 	servicesAbstarct "server-watcher-app/src/services/abstract"
 )
 
-type pm2Provider struct{}
+type pm2Provider struct {
+	projectRepo repositoryConcrete.ProjectRepository
+}
 
-func NewPM2Provider() servicesAbstarct.ProcessProvider {
-	return &pm2Provider{}
+func NewPM2Provider(projectRepo repositoryConcrete.ProjectRepository) servicesAbstarct.ProcessProvider {
+	return &pm2Provider{
+		projectRepo: projectRepo,
+	}
 }
 
 func (p *pm2Provider) GetProviderType() enumModels.ProcessType {
@@ -52,9 +57,27 @@ func (p *pm2Provider) ListProcesses(ctx context.Context) ([]models.MonitoredEnti
 }
 
 func (p *pm2Provider) StopProcess(ctx context.Context, id string) error {
-	return exec.CommandContext(ctx, "pm2", "stop", id).Run()
+
+	project, err := p.projectRepo.GetPm2ByExternalId(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return exec.CommandContext(ctx, "pm2", "stop", project.Name).Run()
 }
 
 func (p *pm2Provider) StartProcess(ctx context.Context, id string) error {
-	return exec.CommandContext(ctx, "pm2", "start", id).Run()
+	//return exec.CommandContext(ctx, "pm2", "start", id).Run()
+
+	project, err := p.projectRepo.GetPm2ByExternalId(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.CommandContext(ctx, "pm2", "start", *project.ProjectStartCommand, "--name", project.Name)
+
+	cmd.Dir = *project.ProjectPath
+
+	return cmd.Run()
+
 }

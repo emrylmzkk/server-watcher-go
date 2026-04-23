@@ -13,7 +13,8 @@ import (
 )
 
 type AppContainer struct {
-	ProjectHandler *handler.ProjectsHandler
+	DockerHandler *handler.DockerHandler
+	Pm2Handler    *handler.Pm2Handler
 
 	SyncWorker *background.SyncWorker
 }
@@ -26,10 +27,15 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 	dockerProv, err := servicesConcrete.NewDockerProvider()
 
 	if err != nil {
-		log.Printf("Docker provider could not be started", err)
+		log.Printf("Docker provider could not be started: %v", err)
 	}
 
-	pm2Prov := servicesConcrete.NewPM2Provider()
+	dockerService, err := servicesConcrete.NewDockerService()
+	if err != nil {
+		log.Printf("Docker service could not be started: %v", err)
+	}
+
+	pm2Prov := servicesConcrete.NewPM2Provider(pm2ProjectRepo)
 
 	providers := []servicesAbstarct.ProcessProvider{
 		pm2Prov,
@@ -42,8 +48,11 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 	syncWorker := background.NewSyncWorker(wathcerService, 30*time.Second)
 
 	return &AppContainer{
-		ProjectHandler: handler.NewProjectsHandler(wathcerService, pm2Service),
-		SyncWorker:     syncWorker,
+		//ProjectHandler: handler.NewProjectsHandler(wathcerService, pm2Service),
+		DockerHandler: handler.NewDockerHandler(dockerService),
+		Pm2Handler:    handler.NewPm2Handler(pm2Service),
+
+		SyncWorker: syncWorker,
 	}
 
 }

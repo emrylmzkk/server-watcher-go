@@ -72,32 +72,32 @@ func (h *ProjectsHandler) AddNewPm2Project(c *fiber.Ctx) error {
 
 }
 
-func (h *ProjectsHandler) DeletePm2Project(c *fiber.Ctx) error {
+// func (h *ProjectsHandler) DeletePm2Project(c *fiber.Ctx) error {
 
-	req, err := generic.ParseParam[int](c, "id")
+// 	req, err := generic.ParseParam[int](c, "id")
 
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(generic.NewErrorResponse("Invalid request body", err.Error()))
-	}
+// 	if err != nil {
+// 		return c.Status(fiber.StatusBadRequest).JSON(generic.NewErrorResponse("Invalid request body", err.Error()))
+// 	}
 
-	res, err := h.pm2Service.DeletePm2Project(c.Context(), req)
+// 	res, err := h.pm2Service.DeletePm2Project(c.Context(), req)
 
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
-	}
+// 	if err != nil {
+// 		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
+// 	}
 
-	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+// 	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
 
-}
+// }
 
-func (h *ProjectsHandler) GetAllPm2Projects(c *fiber.Ctx) error {
+// func (h *ProjectsHandler) GetAllPm2Projects(c *fiber.Ctx) error {
 
-	res, err := h.pm2Service.GetPm2Projects(c.Context())
+// 	res, err := h.pm2Service.GetPm2Projects(c.Context())
 
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
-	}
+// 	if err != nil {
+// 		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
+// 	}
 
-	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+// 	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
 
-}
+// }
