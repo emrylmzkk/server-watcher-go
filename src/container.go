@@ -2,21 +2,26 @@ package src
 
 import (
 	"log"
+	"server-watcher-app/src/background"
 	"server-watcher-app/src/handler"
 	repositoryConcrete "server-watcher-app/src/repository/concrete"
 	servicesAbstarct "server-watcher-app/src/services/abstract"
 	servicesConcrete "server-watcher-app/src/services/concrete"
+	"time"
 
 	"gorm.io/gorm"
 )
 
 type AppContainer struct {
 	ProjectHandler *handler.ProjectsHandler
+
+	SyncWorker *background.SyncWorker
 }
 
 func NewAppContainer(db *gorm.DB) *AppContainer {
 
 	projectRepo := repositoryConcrete.NewSqliteRepository(db)
+	pm2ProjectRepo := repositoryConcrete.NewProjectRepository(db)
 
 	dockerProv, err := servicesConcrete.NewDockerProvider()
 
@@ -32,9 +37,13 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 	}
 
 	wathcerService := servicesConcrete.NewWatcherService(projectRepo, providers)
+	pm2Service := servicesConcrete.NewPm2ProjectService(pm2ProjectRepo)
+
+	syncWorker := background.NewSyncWorker(wathcerService, 30*time.Second)
 
 	return &AppContainer{
-		ProjectHandler: handler.NewProjectsHandler(wathcerService),
+		ProjectHandler: handler.NewProjectsHandler(wathcerService, pm2Service),
+		SyncWorker:     syncWorker,
 	}
 
 }

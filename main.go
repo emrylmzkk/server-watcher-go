@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"server-watcher-app/src"
 	"server-watcher-app/src/generic"
@@ -24,11 +25,12 @@ func main() {
 		Format: "[${time}] ${status} ${method} ${path} | ${latency} | id=${locals:requestid} err=${error}\n",
 	}))
 
-	// routes.SetupAuthRoutes(app, container.AuthHandler)
-	// routes.SetupUserRoutes(app, container.UserHandler, container.KeycloakService, &container.Userservice)
-	// routes.SetupFamilyRoutes(app, container.FamilyHandler, container.KeycloakService, container.Userservice)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	container := src.NewAppContainer(db)
+
+	container.SyncWorker.Start(ctx)
 
 	src.SetupRoutes(app, container)
 

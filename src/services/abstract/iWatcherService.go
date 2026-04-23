@@ -7,5 +7,5 @@ import (
 
 type WatcherService interface {
 	SyncAll(ctx context.Context) error
-	ControlProcess(ctx context.Context, dto modelsDTOs.ActionOnProject) error
+	ControlProcess(ctx context.Context, dto *modelsDTOs.ActionOnProject) (bool, error)
 }

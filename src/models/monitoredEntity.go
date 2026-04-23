@@ -10,10 +10,13 @@ import (
 type MonitoredEntity struct {
 	gorm.Model
 
-	ID         int    `gorm:"primaryKey"`
-	ExternalID string `gorm:"uniqueIndex"`
-	Name       string
-	Type       enumModels.ProcessType `gorm:"index"`
-	Status     string
-	LastCheck  time.Time
+	ID                  int    `gorm:"primaryKey"`
+	ExternalID          string `gorm:"uniqueIndex"`
+	Name                string
+	Type                enumModels.ProcessType `gorm:"index"`
+	Status              string
+	LastCheck           time.Time
+	ProjectPath         *string
+	ProjectStartCommand *string
+	ProjectRuntimeType  *enumModels.ProjectRuntimeType
 }
