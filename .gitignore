@@ -1,0 +1,76 @@
+# =========================
+# Go build files
+# =========================
+bin/
+build/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go workspace / modules
+go.work
+go.work.sum
+
+# =========================
+# Dependency directories (genelde commit edilir ama opsiyonel)
+# =========================
+vendor/
+
+# =========================
+# Logs & temp files
+# =========================
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# =========================
+# Environment files (VERY IMPORTANT)
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Database files (özellikle sqlite kullanıyorsan)
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# IDE & Editor files
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Test coverage
+# =========================
+coverage.out
+coverage.html
+
+# =========================
+# Docker (opsiyonel)
+# =========================
+docker-compose.override.yml
+
+# =========================
+# Misc
+# =========================
+*.bak
+*.old
