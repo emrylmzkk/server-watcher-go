@@ -65,3 +65,73 @@ func (h *Pm2Handler) GetAllPm2Projects(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
 
 }
+
+func (h *Pm2Handler) StartPm2Project(c *fiber.Ctx) error {
+
+	req, err := generic.ParseParam[int](c, "id")
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(generic.NewErrorResponse("Invalid request body", err.Error()))
+	}
+
+	res, err := h.pm2Service.StartPm2Project(c.Context(), req)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+
+}
+
+func (h *Pm2Handler) StopPm2Project(c *fiber.Ctx) error {
+
+	req, err := generic.ParseParam[int](c, "id")
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(generic.NewErrorResponse("Invalid request body", err.Error()))
+	}
+
+	res, err := h.pm2Service.StopPm2Project(c.Context(), req)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+
+}
+
+func (h *Pm2Handler) UpdatePm2Project(c *fiber.Ctx) error {
+
+	id, err := generic.ParseParam[int](c, "id")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(generic.NewErrorResponse("Invalid request body", err.Error()))
+	}
+
+	req, err := generic.ParseBody[modelsDTOs.UpdatePm2ProjectRequestDTO](c)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(generic.NewErrorResponse("Invalid request body", err.Error()))
+	}
+
+	res, err := h.pm2Service.UpdatePm2Project(c.Context(), id, req)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+
+}
+
+func (h *Pm2Handler) ResetPm2Process(c *fiber.Ctx) error {
+
+	res, err := h.pm2Service.ResetPm2Process(c.Context())
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+
+}

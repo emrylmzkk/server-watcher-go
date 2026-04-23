@@ -13,6 +13,7 @@ type ProjectRepository interface {
 	repositoryAbstarct.BaseRepository[models.MonitoredEntity]
 	GetPm2Projects(ctx context.Context) ([]models.MonitoredEntity, error)
 	GetPm2ByExternalId(ctx context.Context, externalId string) (models.MonitoredEntity, error)
+	GetPm2ProjectById(ctx context.Context, id int) (models.MonitoredEntity, error)
 }
 
 type projectRepository struct {
@@ -37,6 +38,15 @@ func (r *projectRepository) GetPm2Projects(ctx context.Context) ([]models.Monito
 
 	return projects, nil
 
+}
+
+func (r *projectRepository) GetPm2ProjectById(ctx context.Context, id int) (models.MonitoredEntity, error) {
+	var project models.MonitoredEntity
+	err := r.Query(ctx).
+		Where("id = ?", id).
+		Where("type = ?", enumModels.PM2).
+		First(&project).Error
+	return project, err
 }
 
 func (r *projectRepository) GetPm2ByExternalId(ctx context.Context, externalId string) (models.MonitoredEntity, error) {

@@ -20,3 +20,15 @@ type Pm2ProjectResponseDTO struct {
 	ProjectStartCommand string                        `json:"project_start_command" binding:"required"`
 	ProjectRuntimeType  enumModels.ProjectRuntimeType `json:"project_runtime_tpye" binding:"required"`
 }
+
+// type Pm2ProjectActionRequestDTO struct {
+// 	ExternalID string `json:"external_id" binding:"required"`
+// 	Action     string `json:"action" binding:"required"`
+// }
+
+type UpdatePm2ProjectRequestDTO struct {
+	Name                string                         `json:"name"`
+	ProjectPath         *string                        `json:"project_path"`
+	ProjectStartCommand *string                        `json:"project_start_command"`
+	ProjectRuntimeType  *enumModels.ProjectRuntimeType `json:"project_runtime_tpye"`
+}

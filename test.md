@@ -2,8 +2,8 @@ package servicesConcrete
 
 import (
 	"context"
-	"errors"
-	"server-watcher-app/src/generic"
+	"log"
+	"os/exec"
 	"server-watcher-app/src/models"
 	modelsDTOs "server-watcher-app/src/models/dtos"
 	enumModels "server-watcher-app/src/models/enum"
@@ -55,36 +55,6 @@ func (s *pm2ProjectService) AddNewProject(ctx context.Context, dto *modelsDTOs.C
 
 	err = s.projectRepo.Create(ctx, &newPm2Project)
 
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
-
-}
-
-func (s *pm2ProjectService) UpdatePm2Project(ctx context.Context, id int, dto *modelsDTOs.UpdatePm2ProjectRequestDTO) (bool, error) {
-
-	pm2Project, err := s.projectRepo.GetByID(ctx, id)
-
-	if err != nil {
-		return false, err
-	}
-
-	if dto.Name != "" {
-		pm2Project.Name = dto.Name
-	}
-	if dto.ProjectPath != nil {
-		pm2Project.ProjectPath = dto.ProjectPath
-	}
-	if dto.ProjectStartCommand != nil {
-		pm2Project.ProjectStartCommand = dto.ProjectStartCommand
-	}
-	if dto.ProjectRuntimeType != nil {
-		pm2Project.ProjectRuntimeType = dto.ProjectRuntimeType
-	}
-
-	err = s.projectRepo.Update(ctx, pm2Project)
 	if err != nil {
 		return false, err
 	}
@@ -163,26 +133,38 @@ func (s *pm2ProjectService) StartPm2Project(ctx context.Context, id int) (bool, 
 		return false, err
 	}
 
-	if project.ProjectStartCommand == nil || project.ProjectPath == nil {
-		return false, errors.New("project start command or path is missing")
-	}
+	// if project.ProjectStartCommand == nil || project.ProjectPath == nil {
+	// 	return false, fmt.Errorf("project start command or path is missing")
+	// }
 
-	generic.NewCmd(ctx, "pm2", "delete", project.Name).Run()
+	// PM2'de mükerrer (duplicate) oluşmaması için önce varsa siliyoruz
+	log.Printf("[PM2] Deleting existing process: %s", project.Name)
+	deleteOut, _ := exec.CommandContext(ctx, "pm2", "delete", project.Name).CombinedOutput()
+	log.Printf("[PM2] Delete output: %s", string(deleteOut))
 
+	log.Printf("[PM2] Starting process: %s with command: %s", project.Name, *project.ProjectStartCommand)
+	
 	startCommand := *project.ProjectStartCommand
+	// Eğer komut yanlışlıkla pm2 start ile başlıyorsa temizle
 	startCommand = strings.TrimPrefix(startCommand, "pm2 start ")
+	// Eğer içinde --name varsa o kısmı da temizlemeye çalışalım (basitçe)
 	if idx := strings.Index(startCommand, " --name"); idx != -1 {
 		startCommand = startCommand[:idx]
 	}
 	startCommand = strings.Trim(startCommand, "'\" ")
 
-	cmd := generic.NewCmdInDir(ctx, *project.ProjectPath, "pm2", "start", startCommand, "--name", project.Name)
+	cmd := exec.CommandContext(ctx, "pm2", "start", startCommand, "--name", project.Name)
+	cmd.Dir = *project.ProjectPath
 
-	output, err := cmd.CombinedOutput()
+	startOut, err := cmd.CombinedOutput()
+	log.Printf("[PM2] Start output: %s", string(startOut))
+
 	if err != nil {
-		return false, errors.New(string(output))
+		log.Printf("[PM2] Start error: %v", err)
+		return false, err
 	}
 
+	// UNIQUE hatasını önlemek için sadece belirli alanları güncelliyoruz
 	err = s.projectRepo.Query(ctx).Model(&models.MonitoredEntity{}).Where("id = ?", project.ID).Updates(map[string]interface{}{
 		"status":     string(enumModels.Running),
 		"last_check": time.Now(),
@@ -198,60 +180,25 @@ func (s *pm2ProjectService) StartPm2Project(ctx context.Context, id int) (bool, 
 
 func (s *pm2ProjectService) StopPm2Project(ctx context.Context, id int) (bool, error) {
 
-	project, err := s.projectRepo.GetPm2ProjectById(ctx, id)
+	project, err := s.projectRepo.GetByID(ctx, id)
 
 	if err != nil {
 		return false, err
 	}
 
-	// if project.Name == "" {
-	// 	return false, errors.New("project name not found")
-	// }
-
-	// log.Println("project name: ", project.Name)
-
-	cmd := generic.NewCmd(ctx, "pm2", "stop", project.Name)
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return false, errors.New(string(output))
-	}
-
-	project.Status = string(enumModels.Exited)
-	project.LastCheck = time.Now()
-
-	err = s.projectRepo.Update(ctx, &project)
-
+	err = exec.CommandContext(ctx, "pm2", "stop", project.Name).Run()
 	if err != nil {
 		return false, err
 	}
 
-	return true, nil
+	// Sadece belirli alanları güncelliyoruz
+	err = s.projectRepo.Query(ctx).Model(&models.MonitoredEntity{}).Where("id = ?", project.ID).Updates(map[string]interface{}{
+		"status":     string(enumModels.Exited),
+		"last_check": time.Now(),
+	}).Error
 
-}
-
-func (s *pm2ProjectService) ResetPm2Process(ctx context.Context) (bool, error) {
-
-	cmd := generic.NewCmd(ctx, "pm2", "delete", "all")
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return false, errors.New(string(output))
-	}
-
-	projects, err := s.projectRepo.GetPm2Projects(ctx)
 	if err != nil {
 		return false, err
-	}
-
-	for _, project := range projects {
-		err = s.projectRepo.Query(ctx).Model(&models.MonitoredEntity{}).Where("id = ?", project.ID).Updates(map[string]interface{}{
-			"status":     string(enumModels.Exited),
-			"last_check": time.Now(),
-		}).Error
-		if err != nil {
-			return false, err
-		}
 	}
 
 	return true, nil
