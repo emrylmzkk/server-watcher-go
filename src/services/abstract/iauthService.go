@@ -9,4 +9,5 @@ type AuthService interface {
 	Register(ctx context.Context, dto *modelsDTOs.RegisterRequestDTO) (bool, error)
 	Login(ctx context.Context, dto *modelsDTOs.LoginRequestDTO) (*modelsDTOs.AuthResponseDTO, error)
 	RefreshToken(ctx context.Context, dto *modelsDTOs.RefreshTokenRequestDTO) (*modelsDTOs.AuthResponseDTO, error)
+	GetCurrentUserInformation(ctx context.Context, userId int) (*modelsDTOs.UserResponseDTO, error)
 }

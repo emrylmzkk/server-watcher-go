@@ -107,3 +107,20 @@ func (s *authService) RefreshToken(ctx context.Context, dto *modelsDTOs.RefreshT
 	}, nil
 
 }
+
+func (s *authService) GetCurrentUserInformation(ctx context.Context, userId int) (*modelsDTOs.UserResponseDTO, error) {
+
+	user, err := s.userRepository.GetByID(ctx, userId)
+
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	return &modelsDTOs.UserResponseDTO{
+		ID:       int(user.ID),
+		Name:     user.Name,
+		Surname:  user.Surname,
+		UserRole: user.UserRole,
+	}, nil
+
+}

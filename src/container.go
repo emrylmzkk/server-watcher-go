@@ -4,11 +4,13 @@ import (
 	"log"
 	"server-watcher-app/src/background"
 	"server-watcher-app/src/handler"
+	"server-watcher-app/src/middleware"
 	repositoryConcrete "server-watcher-app/src/repository/concrete"
 	servicesAbstarct "server-watcher-app/src/services/abstract"
 	servicesConcrete "server-watcher-app/src/services/concrete"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
 
@@ -18,7 +20,8 @@ type AppContainer struct {
 	ServerGeneralHandler *handler.ServerGeneralHandler
 	AuthHandler          *handler.AuthHandler
 
-	SyncWorker *background.SyncWorker
+	AuthMiddleware fiber.Handler
+	SyncWorker     *background.SyncWorker
 }
 
 func NewAppContainer(db *gorm.DB) *AppContainer {
@@ -59,6 +62,7 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 		Pm2Handler:           handler.NewPm2Handler(pm2Service),
 		ServerGeneralHandler: handler.NewServerGeneralHandler(serverGeneralService),
 		AuthHandler:          handler.NewAuthHandler(authService),
+		AuthMiddleware:       middleware.AuthMiddleware(userRepository),
 
 		SyncWorker: syncWorker,
 	}

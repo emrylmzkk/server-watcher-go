@@ -1,8 +1,6 @@
 package src
 
 import (
-	"server-watcher-app/src/middleware"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -14,8 +12,9 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 	auth.Post("/register", container.AuthHandler.Register)
 	auth.Post("/login", container.AuthHandler.Login)
 	auth.Post("/refresh-token", container.AuthHandler.RefreshToken)
+	auth.Get("/me", container.AuthMiddleware, container.AuthHandler.GetCurrentUserInformation)
 
-	pm2 := api.Group("/pm2", middleware.AuthMiddleware())
+	pm2 := api.Group("/pm2", container.AuthMiddleware)
 	pm2.Post("/create", container.Pm2Handler.CreatePm2Project)
 	pm2.Post("/start/:id", container.Pm2Handler.StartPm2Project)
 	pm2.Post("/stop/:id", container.Pm2Handler.StopPm2Project)
@@ -24,12 +23,12 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 	pm2.Put("/:id", container.Pm2Handler.UpdatePm2Project)
 	pm2.Post("/reset", container.Pm2Handler.ResetPm2Process)
 
-	docker := api.Group("/docker", middleware.AuthMiddleware())
+	docker := api.Group("/docker", container.AuthMiddleware)
 	docker.Get("/containers", container.DockerHandler.GetAllContainers)
 	docker.Post("/start/:id", container.DockerHandler.StartContainer)
 	docker.Post("/stop/:id", container.DockerHandler.StopContainer)
 
-	serverGeneral := api.Group("/server-general", middleware.AuthMiddleware())
+	serverGeneral := api.Group("/server-general", container.AuthMiddleware)
 	serverGeneral.Get("/cpu", container.ServerGeneralHandler.GetCPUPercent)
 	serverGeneral.Get("/ram", container.ServerGeneralHandler.GetRamStats)
 	serverGeneral.Get("/disk", container.ServerGeneralHandler.GetDiskStats)

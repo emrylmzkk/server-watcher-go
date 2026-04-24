@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"server-watcher-app/src/models"
+	enumModels "server-watcher-app/src/models/enum"
 	repositoryAbstarct "server-watcher-app/src/repository/abstract"
 
 	"gorm.io/gorm"
@@ -13,6 +14,7 @@ type UserRepository interface {
 	repositoryAbstarct.BaseRepository[models.User]
 	IsUserExists(ctx context.Context, username string) (bool, error)
 	GetByUserName(ctx context.Context, username string) (*models.User, error)
+	IsUserAdmin(ctx context.Context, userId uint) (bool, error)
 }
 
 type userRepository struct {
@@ -56,5 +58,22 @@ func (r *userRepository) GetByUserName(ctx context.Context, username string) (*m
 	}
 
 	return &user, nil
+
+}
+
+func (r *userRepository) IsUserAdmin(ctx context.Context, userId uint) (bool, error) {
+
+	var user models.User
+
+	err := r.Query(ctx).
+		Select("user_role").
+		Where("id = ?", userId).
+		First(&user).Error
+
+	if err != nil {
+		return false, err
+	}
+
+	return user.UserRole == enumModels.Admin, nil
 
 }
