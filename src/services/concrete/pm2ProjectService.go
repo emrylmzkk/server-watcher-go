@@ -2,7 +2,9 @@ package servicesConcrete
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"os/exec"
 	"server-watcher-app/src/generic"
 	"server-watcher-app/src/models"
 	modelsDTOs "server-watcher-app/src/models/dtos"
@@ -255,5 +257,45 @@ func (s *pm2ProjectService) ResetPm2Process(ctx context.Context) (bool, error) {
 	}
 
 	return true, nil
+
+}
+
+// func (s *pm2ProjectService) GetPm2InsideList(ctx context.Context) (*[]modelsDTOs.Pm2InsideListResponseDTO, error) {
+
+// 	var responses []modelsDTOs.Pm2InsideListResponseDTO
+
+// 	cmd := generic.NewCmd(ctx, "pm2 jlist | jq '.[] | {name: .name, status: .pm2_env.status, pm_id: .pm_id}'")
+
+// 	output, err := cmd.CombinedOutput()
+// 	if err != nil {
+// 		return &responses, errors.New(string(output))
+// 	}
+
+// 	return &responses, nil
+
+// }
+func (s *pm2ProjectService) GetPm2InsideList(ctx context.Context) (*[]modelsDTOs.Pm2InsideListResponseDTO, error) {
+
+	var responses []modelsDTOs.Pm2InsideListResponseDTO
+
+	cmd := exec.CommandContext(ctx, "pm2", "jlist")
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return &responses, errors.New(string(output))
+	}
+
+	//float64(107978752) / 1024 / 1024 --> memory formatlanmasi gerekiyor
+
+	// json --> struct
+
+	//👉 JSON → struct dönüşümü = Unmarshal
+	//👉 struct → JSON dönüşümü = Marshal
+
+	if err := json.Unmarshal(output, &responses); err != nil {
+		return nil, err
+	}
+
+	return &responses, nil
 
 }

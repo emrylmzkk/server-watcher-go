@@ -135,3 +135,15 @@ func (h *Pm2Handler) ResetPm2Process(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
 
 }
+
+func (h *Pm2Handler) GetPm2InsideList(c *fiber.Ctx) error {
+
+	res, err := h.pm2Service.GetPm2InsideList(c.Context())
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+
+}

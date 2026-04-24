@@ -32,3 +32,15 @@ type UpdatePm2ProjectRequestDTO struct {
 	ProjectStartCommand *string                        `json:"project_start_command"`
 	ProjectRuntimeType  *enumModels.ProjectRuntimeType `json:"project_runtime_tpye"`
 }
+
+type Pm2InsideListResponseDTO struct {
+	PMId   int    `json:"pm_id"`
+	Name   string `json:"name"`
+	Pm2Env struct {
+		Status string `json:"status"`
+	} `json:"pm2_env"`
+	Monit struct {
+		CPU    float64 `json:"cpu"`
+		Memory int64   `json:"memory"` // bytes
+	} `json:"monit"`
+}

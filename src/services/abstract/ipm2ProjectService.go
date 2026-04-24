@@ -13,4 +13,5 @@ type Pm2ProjectService interface {
 	StopPm2Project(ctx context.Context, id int) (bool, error)
 	UpdatePm2Project(ctx context.Context, id int, dto *modelsDTOs.UpdatePm2ProjectRequestDTO) (bool, error)
 	ResetPm2Process(ctx context.Context) (bool, error)
+	GetPm2InsideList(ctx context.Context) (*[]modelsDTOs.Pm2InsideListResponseDTO, error)
 }

@@ -22,6 +22,7 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 	pm2.Get("/projects", container.Pm2Handler.GetAllPm2Projects)
 	pm2.Put("/:id", container.Pm2Handler.UpdatePm2Project)
 	pm2.Post("/reset", container.Pm2Handler.ResetPm2Process)
+	pm2.Get("/inside-list", container.Pm2Handler.GetPm2InsideList)
 
 	docker := api.Group("/docker", container.AuthMiddleware)
 	docker.Get("/containers", container.DockerHandler.GetAllContainers)
