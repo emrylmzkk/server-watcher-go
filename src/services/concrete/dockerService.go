@@ -139,7 +139,7 @@ func (s *dockerService) StartStatsCollector(ctx context.Context) {
 
 	go func() {
 		ticker := time.NewTicker(5 * time.Second)
-		dbTicker := time.NewTicker(3 * time.Minute) // Dakikada bir DB'ye kaydet
+		dbTicker := time.NewTicker(3 * time.Minute)
 
 		for {
 			select {

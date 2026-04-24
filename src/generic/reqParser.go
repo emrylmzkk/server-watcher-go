@@ -2,6 +2,7 @@ package generic
 
 import (
 	"fmt"
+	repositoryAbstarct "server-watcher-app/src/repository/abstract"
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
@@ -60,14 +61,14 @@ func ParseParam[T any](c *fiber.Ctx, key string) (T, error) {
 
 }
 
-// func ParseQuery(c *fiber.Ctx) (*repositories.Pagination, error) {
+func ParseQuery(c *fiber.Ctx) (*repositoryAbstarct.Pagination, error) {
 
-// 	var paginationFilter repositories.Pagination
+	var paginationFilter repositoryAbstarct.Pagination
 
-// 	if err := c.QueryParser(&paginationFilter); err != nil {
-// 		return nil, err
-// 	}
+	if err := c.QueryParser(&paginationFilter); err != nil {
+		return nil, err
+	}
 
-// 	return &paginationFilter, nil
+	return &paginationFilter, nil
 
-// }
+}

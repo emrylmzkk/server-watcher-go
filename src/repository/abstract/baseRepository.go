@@ -37,6 +37,7 @@ type BaseRepository[T any] interface {
 	Query(ctx context.Context) *gorm.DB // deleted olanları filtreler
 	Raw(ctx context.Context) *gorm.DB   // filtrelemez
 
+	GetWithPaginate(ctx context.Context, p Pagination) (*PaginatedResult[T], error)
 	GetByUserIdPaginated(ctx context.Context, userId uint, p Pagination) (*PaginatedResult[T], error)
 	GetByPagination(ctx context.Context, p Pagination) (*PaginatedResult[T], error)
 	FindPaginated(ctx context.Context, p Pagination, query interface{}, args ...interface{}) (*PaginatedResult[T], error)
@@ -121,6 +122,10 @@ func (r *GormBaseRepository[T]) paginate(db *gorm.DB, p Pagination) (*PaginatedR
 		Total:      total,
 		TotalPages: totalPages,
 	}, nil
+}
+
+func (r *GormBaseRepository[T]) GetWithPaginate(ctx context.Context, p Pagination) (*PaginatedResult[T], error) {
+	return r.paginate(r.Query(ctx), p)
 }
 
 func (r *GormBaseRepository[T]) PaginateWithUserFilter(ctx context.Context, userId uint, p Pagination) (*PaginatedResult[T], error) {
