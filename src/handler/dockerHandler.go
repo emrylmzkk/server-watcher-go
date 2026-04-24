@@ -57,3 +57,8 @@ func (h *DockerHandler) StopContainer(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse("Container stopped"))
 }
+
+func (h *DockerHandler) GetContainersWithStats(c *fiber.Ctx) error {
+	res := h.dockerService.GetCachedStats()
+	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+}

@@ -26,6 +26,8 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 
 	docker := api.Group("/docker", container.AuthMiddleware)
 	docker.Get("/containers", container.DockerHandler.GetAllContainers)
+	docker.Get("/containers-stats", container.DockerHandler.GetContainersWithStats)
+
 	docker.Post("/start/:id", container.DockerHandler.StartContainer)
 	docker.Post("/stop/:id", container.DockerHandler.StopContainer)
 

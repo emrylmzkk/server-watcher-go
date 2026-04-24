@@ -25,7 +25,8 @@ func (s *wathcerService) SyncAll(ctx context.Context) error {
 	for _, provider := range s.providers {
 		processes, err := provider.ListProcesses(ctx)
 		if err != nil {
-			log.Printf("Provider %s hatası: %v", provider.GetProviderType(), err)
+			log.Printf("Provider %v hatası: %v", provider.GetProviderType(), err)
+
 			continue
 		}
 

@@ -20,8 +20,9 @@ type AppContainer struct {
 	ServerGeneralHandler *handler.ServerGeneralHandler
 	AuthHandler          *handler.AuthHandler
 
-	AuthMiddleware fiber.Handler
-	SyncWorker     *background.SyncWorker
+	AuthMiddleware       fiber.Handler
+	SyncWorker           *background.SyncWorker
+	ContainerStatsWorker *background.ContainerStatsWorker
 }
 
 func NewAppContainer(db *gorm.DB) *AppContainer {
@@ -36,7 +37,8 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 		log.Printf("Docker provider could not be started: %v", err)
 	}
 
-	dockerService, err := servicesConcrete.NewDockerService()
+	dockerService, err := servicesConcrete.NewDockerService(db)
+
 	if err != nil {
 		log.Printf("Docker service could not be started: %v", err)
 	}
@@ -64,7 +66,8 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 		AuthHandler:          handler.NewAuthHandler(authService),
 		AuthMiddleware:       middleware.AuthMiddleware(userRepository),
 
-		SyncWorker: syncWorker,
+		SyncWorker:           syncWorker,
+		ContainerStatsWorker: background.NewContainerStatsWorker(dockerService),
 	}
 
 }
