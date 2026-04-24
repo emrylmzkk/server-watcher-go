@@ -22,4 +22,10 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 	docker.Post("/start/:id", container.DockerHandler.StartContainer)
 	docker.Post("/stop/:id", container.DockerHandler.StopContainer)
 
+	serverGeneral := api.Group("/server-general")
+	serverGeneral.Get("/cpu", container.ServerGeneralHandler.GetCPUPercent)
+	serverGeneral.Get("/ram", container.ServerGeneralHandler.GetRamStats)
+	serverGeneral.Get("/disk", container.ServerGeneralHandler.GetDiskStats)
+	serverGeneral.Get("/stats", container.ServerGeneralHandler.GetGeneralStats)
+
 }
