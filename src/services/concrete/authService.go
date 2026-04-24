@@ -81,9 +81,9 @@ func (s *authService) Login(ctx context.Context, dto *modelsDTOs.LoginRequestDTO
 
 }
 
-func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*modelsDTOs.AuthResponseDTO, error) {
+func (s *authService) RefreshToken(ctx context.Context, dto *modelsDTOs.RefreshTokenRequestDTO) (*modelsDTOs.AuthResponseDTO, error) {
 
-	claims, err := generic.ValidateToken(refreshToken)
+	claims, err := generic.ValidateToken(dto.RefreshToken)
 
 	if err != nil {
 		return nil, errors.New("invalid refresh token")

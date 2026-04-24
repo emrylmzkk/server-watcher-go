@@ -16,6 +16,7 @@ func InitDB() (*gorm.DB, error) {
 	// Tabloları otomatik oluştur
 	err = db.AutoMigrate(
 		&models.MonitoredEntity{},
+		&models.User{},
 	)
 	return db, err
 }

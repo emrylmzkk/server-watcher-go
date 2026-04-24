@@ -4,14 +4,29 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
+
+var validate *validator.Validate
+
+func init() {
+	validate = validator.New()
+}
 
 func ParseBody[T any](c *fiber.Ctx) (*T, error) {
 
 	var dto T
 
+	// json --> struct
+
 	if err := c.BodyParser(&dto); err != nil {
+		return nil, err
+	}
+
+	// validator kutuphanesi ile struct validasyonu
+
+	if err := validate.Struct(dto); err != nil {
 		return nil, err
 	}
 

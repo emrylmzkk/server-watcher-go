@@ -25,3 +25,7 @@ type UserResponseDTO struct {
 	Surname  string              `json:"surname"`
 	UserRole enumModels.UserRole `json:"user_role"`
 }
+
+type RefreshTokenRequestDTO struct {
+	RefreshToken string `json:"refresh_token" validate:"required"`
+}

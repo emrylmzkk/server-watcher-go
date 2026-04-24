@@ -2,6 +2,7 @@ package repositoryConcrete
 
 import (
 	"context"
+	"errors"
 	"server-watcher-app/src/models"
 	repositoryAbstarct "server-watcher-app/src/repository/abstract"
 
@@ -31,6 +32,11 @@ func (r *userRepository) IsUserExists(ctx context.Context, username string) (boo
 	err := r.Query(ctx).Where("username = ?", username).First(&user).Error
 
 	if err != nil {
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+
 		return false, err
 	}
 

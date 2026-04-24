@@ -16,6 +16,7 @@ type AppContainer struct {
 	DockerHandler        *handler.DockerHandler
 	Pm2Handler           *handler.Pm2Handler
 	ServerGeneralHandler *handler.ServerGeneralHandler
+	AuthHandler          *handler.AuthHandler
 
 	SyncWorker *background.SyncWorker
 }
@@ -24,6 +25,7 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 
 	projectRepo := repositoryConcrete.NewSqliteRepository(db)
 	pm2ProjectRepo := repositoryConcrete.NewProjectRepository(db)
+	userRepository := repositoryConcrete.NewUserRepository(db)
 
 	dockerProv, err := servicesConcrete.NewDockerProvider()
 
@@ -37,6 +39,7 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 	}
 
 	serverGeneralService := servicesConcrete.NewServerGeneralService()
+	authService := servicesConcrete.NewAuthService(userRepository)
 
 	pm2Prov := servicesConcrete.NewPM2Provider(pm2ProjectRepo)
 
@@ -55,6 +58,7 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 		DockerHandler:        handler.NewDockerHandler(dockerService),
 		Pm2Handler:           handler.NewPm2Handler(pm2Service),
 		ServerGeneralHandler: handler.NewServerGeneralHandler(serverGeneralService),
+		AuthHandler:          handler.NewAuthHandler(authService),
 
 		SyncWorker: syncWorker,
 	}
