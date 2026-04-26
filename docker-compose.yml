@@ -1,0 +1,18 @@
+services:
+  server-watcher:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: server-watcher
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./wathcer_app.db:/app/wathcer_app.db
+    environment:
+      - TZ=UTC
+      - BACKEND_PORT=5001
+      - JWT_SECRET=cfd138a187bbd14a66d7cae44e1a713929109a8595f5ae421c025bf9b015fa0b
+    privileged: true
+    pid: host
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"

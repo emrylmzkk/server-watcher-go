@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"gorm.io/gorm"
 )
@@ -54,6 +55,40 @@ func (s *dockerService) GetContainers(ctx context.Context) ([]modelsDTOs.DockerC
 	}
 
 	return response, nil
+}
+
+func (s *dockerService) GetActiveContainers(ctx context.Context) ([]modelsDTOs.DockerContainerResponseDTO, error) {
+
+	filter := filters.NewArgs()
+	filter.Add("status", "running")
+
+	containers, err := s.cli.ContainerList(ctx, container.ListOptions{
+		All:     false,
+		Filters: filter,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var response []modelsDTOs.DockerContainerResponseDTO
+
+	for _, c := range containers {
+		name := ""
+
+		if len(c.Names) > 0 {
+			name = strings.TrimPrefix(c.Names[0], "/")
+		}
+
+		response = append(response, modelsDTOs.DockerContainerResponseDTO{
+			Name:      name,
+			IsRunning: true,
+			Uptime:    c.Status,
+		})
+	}
+
+	return response, nil
+
 }
 
 func (s *dockerService) StartContainer(ctx context.Context, containerID string) error {

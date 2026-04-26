@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"server-watcher-app/src"
 	"server-watcher-app/src/generic"
 
@@ -35,5 +36,7 @@ func main() {
 
 	src.SetupRoutes(app, container)
 
-	log.Fatal(app.Listen(":5001"))
+	backendPort := os.Getenv("BACKEND_PORT")
+
+	log.Fatal(app.Listen(":" + backendPort))
 }

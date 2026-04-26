@@ -3,6 +3,7 @@ package generic
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -10,8 +11,15 @@ import (
 
 // Docker içinde olup olmadığımızı /.dockerenv dosyasına bakarak anlıyoruz
 func isDocker() bool {
-	_, err := os.Stat("/.dockerenv")
-	return !os.IsNotExist(err)
+	if _, err := os.Stat("/.dockerenv"); !os.IsNotExist(err) {
+		return true
+	}
+	// Alternatif kontrol: /proc/1/cgroup (Docker/Containerd için)
+	data, err := os.ReadFile("/proc/1/cgroup")
+	if err == nil && strings.Contains(string(data), "docker") {
+		return true
+	}
+	return false
 }
 
 // NewCmd — dizin belirtmeden komut çalıştırır
@@ -19,9 +27,14 @@ func isDocker() bool {
 // Dev'de  : doğrudan exec.CommandContext
 func NewCmd(ctx context.Context, name string, args ...string) *exec.Cmd {
 	if isDocker() {
-		nsArgs := buildNsenterArgs(name, args...)
+		// bash -l (login shell) kullanarak hostun tüm profil dosyalarını (.profile, /etc/profile vb.) yüklemesini sağlıyoruz.
+		// Bu sayede PATH dahil tüm ortam değişkenleri hosttaki gibi olur.
+		fullCmd := fmt.Sprintf("%s %s", shellEscape(name), joinEscaped(args))
+		nsArgs := buildNsenterArgs("bash", "-l", "-c", fullCmd)
+		log.Printf("[DOCKER] Running nsenter %v", nsArgs)
 		return exec.CommandContext(ctx, "nsenter", nsArgs...)
 	}
+	log.Printf("[LOCAL] Running %s %v", name, args)
 	return exec.CommandContext(ctx, name, args...)
 }
 
@@ -30,16 +43,17 @@ func NewCmd(ctx context.Context, name string, args ...string) *exec.Cmd {
 // Dev'de   : cmd.Dir set edilerek normal çalışır
 func NewCmdInDir(ctx context.Context, dir string, name string, args ...string) *exec.Cmd {
 	if isDocker() {
-		// nsenter ile shell üzerinden dizine girip komutu çalıştırıyoruz
-		shellCmd := fmt.Sprintf("cd %s && %s %s",
+		// nsenter ile login shell üzerinden dizine girip komutu çalıştırıyoruz
+		fullCmd := fmt.Sprintf("cd %s && %s %s",
 			shellEscape(dir),
 			shellEscape(name),
 			joinEscaped(args),
 		)
-		nsArgs := buildNsenterArgs("sh", "-c", shellCmd)
+		nsArgs := buildNsenterArgs("bash", "-l", "-c", fullCmd)
+		log.Printf("[DOCKER] Running nsenter %v", nsArgs)
 		return exec.CommandContext(ctx, "nsenter", nsArgs...)
 	}
-
+	log.Printf("[LOCAL] Running (Dir: %s) %s %v", dir, name, args)
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Dir = dir
 	return cmd

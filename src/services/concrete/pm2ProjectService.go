@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"os/exec"
 	"server-watcher-app/src/generic"
 	"server-watcher-app/src/models"
 	modelsDTOs "server-watcher-app/src/models/dtos"
@@ -278,7 +277,7 @@ func (s *pm2ProjectService) GetPm2InsideList(ctx context.Context) (*[]modelsDTOs
 
 	var responses []modelsDTOs.Pm2InsideListResponseDTO
 
-	cmd := exec.CommandContext(ctx, "pm2", "jlist")
+	cmd := generic.NewCmd(ctx, "pm2", "jlist")
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {

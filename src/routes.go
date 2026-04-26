@@ -8,6 +8,9 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 
 	api := app.Group("/api/v1")
 
+	public := api.Group("/public")
+	public.Get("/health", container.PublicHandler.CheckServerCondition)
+
 	auth := api.Group("/auth")
 	auth.Post("/register", container.AuthHandler.Register)
 	auth.Post("/login", container.AuthHandler.Login)
@@ -29,6 +32,7 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 	docker.Get("/containers-stats", container.DockerHandler.GetContainersWithStats)
 	docker.Post("/start/:id", container.DockerHandler.StartContainer)
 	docker.Post("/stop/:id", container.DockerHandler.StopContainer)
+	docker.Get("/active-containers", container.DockerHandler.GetActiveContainers)
 
 	containerStat := api.Group("/docker-stats", container.AuthMiddleware)
 	containerStat.Get("/:containerName", container.ContainerStatHandler.GetStatsByName)

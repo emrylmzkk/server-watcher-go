@@ -62,3 +62,14 @@ func (h *DockerHandler) GetContainersWithStats(c *fiber.Ctx) error {
 	res := h.dockerService.GetCachedStats()
 	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
 }
+
+func (h *DockerHandler) GetActiveContainers(c *fiber.Ctx) error {
+
+	res, err := h.dockerService.GetActiveContainers(c.Context())
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Docker Error", err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+}

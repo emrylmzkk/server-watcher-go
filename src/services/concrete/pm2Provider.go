@@ -3,7 +3,7 @@ package servicesConcrete
 import (
 	"context"
 	"encoding/json"
-	"os/exec"
+	"server-watcher-app/src/generic"
 	"server-watcher-app/src/models"
 	enumModels "server-watcher-app/src/models/enum"
 	repositoryConcrete "server-watcher-app/src/repository/concrete"
@@ -33,7 +33,7 @@ type pm2Process struct {
 
 func (p *pm2Provider) ListProcesses(ctx context.Context) ([]models.MonitoredEntity, error) {
 	// pm2 jlist komutu tüm süreçleri JSON döner
-	cmd := exec.CommandContext(ctx, "pm2", "jlist")
+	cmd := generic.NewCmd(ctx, "pm2", "jlist")
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (p *pm2Provider) StopProcess(ctx context.Context, id string) error {
 		return err
 	}
 
-	return exec.CommandContext(ctx, "pm2", "stop", project.Name).Run()
+	return generic.NewCmd(ctx, "pm2", "stop", project.Name).Run()
 }
 
 func (p *pm2Provider) StartProcess(ctx context.Context, id string) error {
@@ -74,9 +74,7 @@ func (p *pm2Provider) StartProcess(ctx context.Context, id string) error {
 		return err
 	}
 
-	cmd := exec.CommandContext(ctx, "pm2", "start", *project.ProjectStartCommand, "--name", project.Name)
-
-	cmd.Dir = *project.ProjectPath
+	cmd := generic.NewCmdInDir(ctx, *project.ProjectPath, "pm2", "start", *project.ProjectStartCommand, "--name", project.Name)
 
 	return cmd.Run()
 

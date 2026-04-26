@@ -20,6 +20,7 @@ type AppContainer struct {
 	ServerGeneralHandler *handler.ServerGeneralHandler
 	AuthHandler          *handler.AuthHandler
 	ContainerStatHandler *handler.ContainerStatHandler
+	PublicHandler        *handler.PublicHandler
 
 	AuthMiddleware       fiber.Handler
 	SyncWorker           *background.SyncWorker
@@ -68,6 +69,7 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 		ServerGeneralHandler: handler.NewServerGeneralHandler(serverGeneralService),
 		AuthHandler:          handler.NewAuthHandler(authService),
 		ContainerStatHandler: handler.NewContainerStatHandler(containerStatService),
+		PublicHandler:        handler.NewPublicHandler(),
 
 		AuthMiddleware: middleware.AuthMiddleware(userRepository),
 

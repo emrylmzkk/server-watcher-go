@@ -4,6 +4,6 @@ type ProjectStatus string
 
 const (
 	Exited  ProjectStatus = "exited"
-	Running ProjectStatus = "closed"
+	Running ProjectStatus = "running"
 	Dead    ProjectStatus = "dead"
 )
