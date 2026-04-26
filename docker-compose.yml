@@ -15,4 +15,4 @@ services:
     privileged: true
     pid: host
     ports:
-      - "${BACKEND_PORT}:${BACKEND_PORT}"
+      - 5001:5001

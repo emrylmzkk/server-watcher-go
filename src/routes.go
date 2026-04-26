@@ -34,9 +34,9 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 	docker.Post("/stop/:id", container.DockerHandler.StopContainer)
 	docker.Get("/active-containers", container.DockerHandler.GetActiveContainers)
 
-	containerStat := api.Group("/docker-stats", container.AuthMiddleware)
-	containerStat.Get("/:containerName", container.ContainerStatHandler.GetStatsByName)
-	containerStat.Get("/:containerName/paginate", container.ContainerStatHandler.GetStatsByNameP)
+	// containerStat := api.Group("/docker-stats", container.AuthMiddleware)
+	// containerStat.Get("/:containerName", container.ContainerStatHandler.GetStatsByName)
+	// containerStat.Get("/:containerName/paginate", container.ContainerStatHandler.GetStatsByNameP)
 
 	serverGeneral := api.Group("/server-general", container.AuthMiddleware)
 	serverGeneral.Get("/cpu", container.ServerGeneralHandler.GetCPUPercent)
