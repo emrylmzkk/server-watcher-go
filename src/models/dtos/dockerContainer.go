@@ -4,6 +4,7 @@ type DockerContainerResponseDTO struct {
 	Name      string `json:"name"`
 	IsRunning bool   `json:"isRunning"`
 	Uptime    string `json:"uptime"`
+	HostPort  string `json:"hostPort"`
 }
 
 // type DockerStats struct {
@@ -44,6 +45,7 @@ type DockerStats struct {
 	MemoryMB  float64 `json:"memory_mb"`
 	NetworkRX uint64  `json:"network_rx"`
 	NetworkTX uint64  `json:"network_tx"`
+	HostPort  string  `json:"host_port"`
 }
 
 type DockerStatsRaw struct {

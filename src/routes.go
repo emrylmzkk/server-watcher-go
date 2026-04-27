@@ -1,6 +1,9 @@
 package src
 
 import (
+	"server-watcher-app/src/middleware"
+	enumModels "server-watcher-app/src/models/enum"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -12,7 +15,7 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 	public.Get("/health", container.PublicHandler.CheckServerCondition)
 
 	auth := api.Group("/auth")
-	auth.Post("/register", container.AuthHandler.Register)
+	auth.Post("/register", container.AuthMiddleware, middleware.RoleMiddleware(enumModels.Admin), container.AuthHandler.Register)
 	auth.Post("/login", container.AuthHandler.Login)
 	auth.Post("/refresh-token", container.AuthHandler.RefreshToken)
 	auth.Get("/me", container.AuthMiddleware, container.AuthHandler.GetCurrentUserInformation)
@@ -43,5 +46,8 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 	serverGeneral.Get("/ram", container.ServerGeneralHandler.GetRamStats)
 	serverGeneral.Get("/disk", container.ServerGeneralHandler.GetDiskStats)
 	serverGeneral.Get("/stats", container.ServerGeneralHandler.GetGeneralStats)
+
+	metricViewer := api.Group("/metrics", container.AuthMiddleware)
+	metricViewer.Post("/container", container.MetricHandler.GetMetric)
 
 }

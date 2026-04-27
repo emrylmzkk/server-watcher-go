@@ -3,6 +3,7 @@ package servicesConcrete
 import (
 	"context"
 	"errors"
+	"log"
 	"server-watcher-app/src/generic"
 	"server-watcher-app/src/models"
 	modelsDTOs "server-watcher-app/src/models/dtos"
@@ -105,6 +106,43 @@ func (s *authService) RefreshToken(ctx context.Context, dto *modelsDTOs.RefreshT
 		AccessToken:  access,
 		RefreshToken: refresh,
 	}, nil
+
+}
+
+func (s *authService) CreateAdminUser(ctx context.Context, uName string, password string) error {
+
+	isExist, err := s.userRepository.IsUserExists(ctx, uName)
+
+	if err != nil {
+		return nil
+	}
+
+	if isExist == false {
+
+		hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+		if err != nil {
+			return err
+		}
+
+		user := models.User{
+			Username: uName,
+			Password: string(hashed),
+			Name:     "Admin",
+			Surname:  "Admin",
+			UserRole: 95,
+		}
+
+		err = s.userRepository.Create(ctx, &user)
+
+		if err != nil {
+			return err
+		}
+		log.Println("[AdminAuthProc] Admin user created successfuly")
+		return nil
+	}
+
+	return nil
 
 }
 

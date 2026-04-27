@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	genericInfluxDB "server-watcher-app/src/generic/influxDB"
 	"server-watcher-app/src/models"
 	modelsDTOs "server-watcher-app/src/models/dtos"
@@ -87,10 +88,23 @@ func (s *dockerService) GetActiveContainers(ctx context.Context) ([]modelsDTOs.D
 			name = strings.TrimPrefix(c.Names[0], "/")
 		}
 
+		inspect, _ := s.cli.ContainerInspect(ctx, c.ID)
+
+		var hostPort string
+
+		for _, bindings := range inspect.NetworkSettings.Ports {
+			for _, b := range bindings {
+				if b.HostPort != "" {
+					hostPort = b.HostPort
+				}
+			}
+		}
+
 		response = append(response, modelsDTOs.DockerContainerResponseDTO{
 			Name:      name,
 			IsRunning: true,
 			Uptime:    c.Status,
+			HostPort:  hostPort,
 		})
 	}
 
@@ -133,10 +147,26 @@ func (s *dockerService) collectStatsParallel(ctx context.Context) ([]modelsDTOs.
 				name = strings.TrimPrefix(c.Names[0], "/")
 			}
 
+			inspect, err := s.cli.ContainerInspect(ctx, c.ID)
+			if err != nil {
+				return
+			}
+
+			var hostPort string
+
+			for _, bindings := range inspect.NetworkSettings.Ports {
+				for _, b := range bindings {
+					if b.HostPort != "" {
+						hostPort = b.HostPort
+					}
+				}
+			}
+
 			dto := modelsDTOs.DockerStats{
 				Name:      name,
 				IsRunning: c.State == "running",
 				Uptime:    c.Status,
+				HostPort:  hostPort,
 			}
 
 			if c.State == "running" {
@@ -280,6 +310,13 @@ func (s *dockerService) GetCachedStats() []modelsDTOs.DockerStats {
 }
 
 func (s *dockerService) collectAndSaveLogs(ctx context.Context) {
+
+	hostId := os.Getenv("HOST_ID")
+
+	if hostId == "" {
+		hostId = "unknown_host"
+	}
+
 	containers, err := s.cli.ContainerList(ctx, container.ListOptions{All: false}) // sadece running olanlar
 	if err != nil {
 		log.Printf("Container listesi alınamadı: %v", err)
@@ -320,6 +357,8 @@ func (s *dockerService) collectAndSaveLogs(ctx context.Context) {
 			}
 
 			point := influxdb2.NewPointWithMeasurement("container_logs").
+				AddTag("host_id", hostId).
+				AddTag("metric_type", "container_log").
 				AddTag("container_name", name).
 				AddField("message", message).
 				SetTime(time.Now())

@@ -2,6 +2,7 @@ package src
 
 import (
 	"log"
+	"os"
 	"server-watcher-app/src/background"
 	genericInfluxDB "server-watcher-app/src/generic/influxDB"
 	"server-watcher-app/src/handler"
@@ -22,7 +23,9 @@ type AppContainer struct {
 	AuthHandler          *handler.AuthHandler
 	//ContainerStatHandler *handler.ContainerStatHandler
 	PublicHandler *handler.PublicHandler
+	MetricHandler *handler.MetricViewerHandler
 
+	InitHelper           *background.InitHelper
 	AuthMiddleware       fiber.Handler
 	SyncWorker           *background.SyncWorker
 	ContainerStatsWorker *background.ContainerStatsWorker
@@ -31,11 +34,17 @@ type AppContainer struct {
 
 func NewAppContainer(db *gorm.DB) *AppContainer {
 
+	fluxBucketName := os.Getenv("FLUX_BUCKET_NAME")
+
+	if fluxBucketName == "" {
+		fluxBucketName = "metrics"
+	}
+
 	influxClient, err := genericInfluxDB.NewInfluxClient(genericInfluxDB.InfluxConfig{
 		URL:    "http://217.76.49.19:8086",
 		Token:  "my-super-token",
 		Org:    "my-org",
-		Bucket: "metrics",
+		Bucket: fluxBucketName,
 	})
 
 	if err != nil {
@@ -70,10 +79,14 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 		dockerProv,
 	}
 
+	metricViewerService := servicesConcrete.NewMetricViewerService(influxClient)
+
 	wathcerService := servicesConcrete.NewWatcherService(projectRepo, providers)
 	pm2Service := servicesConcrete.NewPm2ProjectService(pm2ProjectRepo)
 
 	syncWorker := background.NewSyncWorker(wathcerService, 30*time.Second)
+
+	initHelper := background.NewInitService(authService)
 
 	return &AppContainer{
 		//ProjectHandler: handler.NewProjectsHandler(wathcerService, pm2Service),
@@ -82,10 +95,13 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 		ServerGeneralHandler: handler.NewServerGeneralHandler(serverGeneralService),
 		AuthHandler:          handler.NewAuthHandler(authService),
 		//ContainerStatHandler: handler.NewContainerStatHandler(containerStatService),
+		MetricHandler: handler.NewMetricViewerHandler(metricViewerService),
+
 		PublicHandler: handler.NewPublicHandler(),
 
 		AuthMiddleware: middleware.AuthMiddleware(userRepository),
 
+		InitHelper:           initHelper,
 		SyncWorker:           syncWorker,
 		ContainerStatsWorker: background.NewContainerStatsWorker(dockerService),
 		InfluxDBClient:       influxClient,
