@@ -102,3 +102,45 @@ func (s *metricViewerService) GetLogsFromDB(ctx context.Context, dto *modelsDTOs
 
 	return response, nil
 }
+
+func (s *metricViewerService) getContainerStatsFromDB(ctx context.Context, dto *modelsDTOs.ContainerLogRequestDTO) (*modelsDTOs.LogResponseDTO, error) {
+	bucket := os.Getenv("FLUX_BUCKET_NAME")
+	if bucket == "" {
+		return nil, errors.New("bucket name is not applied")
+	}
+
+	hostID := dto.HostID
+	containerName := dto.ContainerName
+	limit := dto.Limit
+
+	query := fmt.Sprintf(`
+        from(bucket: "%s")
+            |> range(start: -1h)
+            |> filter(fn: (r) => r["_measurement"] == "container_logs")
+            |> filter(fn: (r) => r["host_id"] == "%s")
+            |> filter(fn: (r) => r["container_name"] == "%s")
+            |> filter(fn: (r) => r["_field"] == "message")
+            |> sort(columns: ["_time"], desc: true)
+            |> limit(n: %d)
+        `, bucket, hostID, containerName, limit)
+
+	result, err := s.influxClient.QueryAPI.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	// Tek bir response objesi oluşturuyoruz
+	response := &modelsDTOs.LogResponseDTO{
+		HostID:        hostID,
+		ContainerName: containerName,
+		Messages:      []string{}, // Boş dizi olarak başlatıyoruz
+	}
+
+	for result.Next() {
+		// Her bir log satırını diziye ekliyoruz
+		logLine := fmt.Sprintf("%v", result.Record().Value())
+		response.Messages = append(response.Messages, logLine)
+	}
+
+	return response, nil
+}

@@ -42,31 +42,62 @@ func NewDockerService(db *gorm.DB, influxClient *genericInfluxDB.InfluxClient) (
 	}, nil
 }
 
+// func (s *dockerService) GetContainers(ctx context.Context) ([]modelsDTOs.DockerContainerResponseDTO, error) {
+// 	containers, err := s.cli.ContainerList(ctx, container.ListOptions{All: true})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	var response []modelsDTOs.DockerContainerResponseDTO
+// 	for _, c := range containers {
+// 		name := ""
+// 		if len(c.Names) > 0 {
+// 			name = strings.TrimPrefix(c.Names[0], "/")
+// 		}
+
+// 		response = append(response, modelsDTOs.DockerContainerResponseDTO{
+// 			Name:      name,
+// 			IsRunning: c.State == "running",
+// 			Uptime:    c.Status, // Status usually contains "Up X minutes" or "Exited (0) X minutes ago"
+// 		})
+// 	}
+
+// 	return response, nil
+// }
+
+// func (s *dockerService) GetContainers(ctx context.Context) ([]modelsDTOs.DockerContainerResponseDTO, error) {
+
+// 	s.cache.Mu.RLock()
+
+// 	if len(s.cache.Containers) > 0 {
+
+// 		cached := s.cache.Containers
+
+// 		s.cache.Mu.RUnlock()
+// 		return cached, nil
+// 	}
+
+// 	s.cache.Mu.RUnlock()
+
+// 	return nil, nil
+
+// }
+
 func (s *dockerService) GetContainers(ctx context.Context) ([]modelsDTOs.DockerContainerResponseDTO, error) {
-	containers, err := s.cli.ContainerList(ctx, container.ListOptions{All: true})
-	if err != nil {
-		return nil, err
+
+	s.cache.Mu.RLock()
+	defer s.cache.Mu.RUnlock() // altta kapatmak yerine bu sekilde her turlu unclock yapıyor
+
+	if len(s.cache.Containers) > 0 {
+		return s.cache.Containers, nil
 	}
 
-	var response []modelsDTOs.DockerContainerResponseDTO
-	for _, c := range containers {
-		name := ""
-		if len(c.Names) > 0 {
-			name = strings.TrimPrefix(c.Names[0], "/")
-		}
-
-		response = append(response, modelsDTOs.DockerContainerResponseDTO{
-			Name:      name,
-			IsRunning: c.State == "running",
-			Uptime:    c.Status, // Status usually contains "Up X minutes" or "Exited (0) X minutes ago"
-		})
-	}
-
-	return response, nil
+	return nil, nil
 }
 
 func (s *dockerService) GetActiveContainers(ctx context.Context) ([]modelsDTOs.DockerContainerResponseDTO, error) {
 
+	log.Println("Active container bilgileri toplaniyor....")
 	filter := filters.NewArgs()
 	filter.Add("status", "running")
 
@@ -207,11 +238,14 @@ func (s *dockerService) collectStatsParallel(ctx context.Context) ([]modelsDTOs.
 	return responses, nil
 }
 
+//Worker olarak islemi gerceklestiren metot
+
 func (s *dockerService) StartStatsCollector(ctx context.Context) {
 	go func() {
 		ticker := time.NewTicker(5 * time.Second)
 		dbTicker := time.NewTicker(3 * time.Minute)
 		logTicker := time.NewTicker(5 * time.Second) // her 5 saniyede log topla
+		activeTicker := time.NewTicker(5 * time.Second)
 
 		for {
 			select {
@@ -231,8 +265,17 @@ func (s *dockerService) StartStatsCollector(ctx context.Context) {
 			case <-logTicker.C:
 				s.collectAndSaveLogs(ctx)
 
+			case <-activeTicker.C:
+				containers, err := s.GetActiveContainers(ctx)
+				if err == nil {
+					s.cache.Mu.Lock()
+					s.cache.Containers = containers
+					s.cache.Mu.Unlock()
+				}
+
 			case <-ctx.Done():
 				return
+
 			}
 		}
 	}()

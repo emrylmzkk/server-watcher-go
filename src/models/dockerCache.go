@@ -7,6 +7,7 @@ import (
 )
 
 type DockerCache struct {
-	Data []modelsDTOs.DockerStats
-	Mu   sync.RWMutex
+	Data       []modelsDTOs.DockerStats
+	Mu         sync.RWMutex
+	Containers []modelsDTOs.DockerContainerResponseDTO
 }
