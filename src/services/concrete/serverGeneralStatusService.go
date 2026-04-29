@@ -2,13 +2,14 @@ package servicesConcrete
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"server-watcher-app/src/generic"
+	"math"
 	"server-watcher-app/src/models"
 	servicesAbstarct "server-watcher-app/src/services/abstract"
-	"strconv"
-	"strings"
+	"time"
+
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 type serverGeneralService struct {
@@ -20,86 +21,47 @@ func NewServerGeneralService() servicesAbstarct.IServerGeneralService {
 
 func (s *serverGeneralService) GetCPUPercent(ctx context.Context) (float64, error) {
 
-	//cmd := "top -bn1 | grep 'Cpu(s)'"
-
-	cmd := generic.NewCmd(ctx, "sh", "-c", "top -bn1 | grep 'Cpu(s)'")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return 0.0, errors.New(string(output))
-	}
-
-	parts := strings.Split(string(output), ",")
-	for _, part := range parts {
-		if strings.Contains(part, "id") {
-			trimmed := strings.TrimSpace(part)
-			valStr := strings.Split(trimmed, " ")[0]
-			idle, err := strconv.ParseFloat(valStr, 64)
-			if err != nil {
-				return 0, err
-			}
-			return float64(int((100.0-idle)*10) / 10), nil // Yuvarlama
-		}
-	}
-
-	return 0.0, errors.New("cpu percentage not found")
-
-}
-
-func (s *serverGeneralService) GetRamStats(ctx context.Context) (used, total, percent float64, err error) {
-
-	cmd := generic.NewCmd(ctx, "sh", "-c", "free -m")
-	output, err := cmd.CombinedOutput()
+	percentages, err := cpu.PercentWithContext(ctx, 500*time.Millisecond, false)
 
 	if err != nil {
-		return 0, 0, 0, errors.New(string(output))
+		return 0, err
 	}
 
-	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	if len(lines) < 2 {
-		return 0, 0, 0, fmt.Errorf("RAM parse error")
+	if len(percentages) == 0 {
+		return 0, nil
 	}
 
-	fields := strings.Fields(lines[1])
-	if len(fields) < 3 {
-		return 0, 0, 0, fmt.Errorf("RAM parse error")
-	}
-
-	totalMB, _ := strconv.ParseFloat(fields[1], 64)
-	usedMB, _ := strconv.ParseFloat(fields[2], 64)
-
-	total = totalMB / 1024 // MB to GB
-	used = usedMB / 1024
-	percent = (used / total) * 100
-
-	return used, total, percent, nil
+	return math.Round(percentages[0]*10) / 10, nil
 
 }
 
 func (s *serverGeneralService) GetDiskStats(ctx context.Context) (used, total, percent float64, err error) {
 
-	cmd := generic.NewCmd(ctx, "sh", "-c", "df -h /")
-	output, err := cmd.CombinedOutput()
+	d, err := disk.UsageWithContext(ctx, "/")
 
 	if err != nil {
-		return
+		return 0, 0, 0, err
 	}
 
-	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	if len(lines) < 2 {
-		return 0, 0, 0, fmt.Errorf("Disk parse error")
+	totalGB := float64(d.Total) / (1024 * 1024 * 1024)
+	usedGB := float64(d.Used) / (1024 * 1024 * 1024)
+
+	return math.Round(usedGB*100) / 100, math.Round(totalGB*100) / 100, math.Round(d.UsedPercent*10) / 10, nil
+
+}
+
+func (s *serverGeneralService) GetRamStats(ctx context.Context) (used, total, percent float64, err error) {
+
+	v, err := mem.VirtualMemoryWithContext(ctx)
+
+	if err != nil {
+		return 0, 0, 0, err
 	}
 
-	fields := strings.Fields(lines[1])
-	if len(fields) < 5 {
-		return 0, 0, 0, fmt.Errorf("Disk parse error")
-	}
+	totalGB := float64(v.Total) / (1024 * 1024 * 1024)
+	usedGB := float64(v.Used) / (1024 * 1024 * 1024)
 
-	// G ve % işaretlerini temizleme
-	total, _ = strconv.ParseFloat(strings.ReplaceAll(fields[1], "G", ""), 64)
-	used, _ = strconv.ParseFloat(strings.ReplaceAll(fields[2], "G", ""), 64)
-	percent, _ = strconv.ParseFloat(strings.ReplaceAll(fields[4], "%", ""), 64)
-
-	return used, total, percent, nil
+	return math.Round(usedGB*100) / 100, math.Round(totalGB*100) / 100, math.Round(v.UsedPercent*10) / 10, nil
 
 }
 
