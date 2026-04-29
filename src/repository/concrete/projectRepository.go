@@ -2,6 +2,7 @@ package repositoryConcrete
 
 import (
 	"context"
+	"errors"
 	"server-watcher-app/src/models"
 	enumModels "server-watcher-app/src/models/enum"
 	repositoryAbstarct "server-watcher-app/src/repository/abstract"
@@ -14,6 +15,7 @@ type ProjectRepository interface {
 	GetPm2Projects(ctx context.Context) ([]models.MonitoredEntity, error)
 	GetPm2ByExternalId(ctx context.Context, externalId string) (models.MonitoredEntity, error)
 	GetPm2ProjectById(ctx context.Context, id int) (models.MonitoredEntity, error)
+	IsProjectExist(ctx context.Context, extarnalId string) (bool, error)
 }
 
 type projectRepository struct {
@@ -70,5 +72,27 @@ func (r *projectRepository) GetDockerProjects(ctx context.Context) ([]models.Mon
 	}
 
 	return projects, nil
+
+}
+
+func (r *projectRepository) IsProjectExist(ctx context.Context, extarnalId string) (bool, error) {
+
+	var project models.MonitoredEntity
+
+	err := r.Query(ctx).
+		Select("external_id").
+		Where("external_id = ?", extarnalId).
+		First(&project).Error
+
+	if err != nil {
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
 
 }

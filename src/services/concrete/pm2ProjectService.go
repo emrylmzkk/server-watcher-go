@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"server-watcher-app/src/generic"
 	"server-watcher-app/src/models"
 	modelsDTOs "server-watcher-app/src/models/dtos"
@@ -296,5 +297,49 @@ func (s *pm2ProjectService) GetPm2InsideList(ctx context.Context) (*[]modelsDTOs
 	}
 
 	return &responses, nil
+
+}
+
+func (s *pm2ProjectService) CreateExamplePm2Project(ctx context.Context) error {
+
+	mockExternal := "example-project"
+
+
+	isExist, err := s.projectRepo.IsProjectExist(ctx,mockExternal)
+
+	if err != nil {
+		return nil
+	}
+
+	if isExist == false {
+
+		projectPath := "/root/test"
+		projectStartCommand := "go run main.go"
+		projectRuntimeType := enumModels.Go
+
+		pm2Project := models.MonitoredEntity{
+			ExternalID:          mockExternal,
+			Name:                mockExternal,
+			Type:                enumModels.PM2,
+			Status:              string(enumModels.Exited),
+			LastCheck:           time.Now(),
+			ProjectPath:         &projectPath,
+			ProjectStartCommand: &projectStartCommand,
+			ProjectRuntimeType:  &projectRuntimeType,
+		}
+
+		err = s.projectRepo.Create(ctx, &pm2Project)
+
+		if err != nil {
+			return err
+		}
+
+		log.Println("[MockPm2Project] Mock Pm2 project created successfuly")
+		return nil
+
+
+	}
+
+	return nil
 
 }

@@ -22,6 +22,8 @@ type AppContainer struct {
 	ContainerStatHandler *handler.ContainerStatHandler
 	PublicHandler        *handler.PublicHandler
 
+	InitHelper *background.InitHelper
+
 	AuthMiddleware       fiber.Handler
 	SyncWorker           *background.SyncWorker
 	ContainerStatsWorker *background.ContainerStatsWorker
@@ -62,6 +64,8 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 
 	syncWorker := background.NewSyncWorker(wathcerService, 30*time.Second)
 
+	initHelper := background.NewInitService(authService, pm2Service)
+
 	return &AppContainer{
 		//ProjectHandler: handler.NewProjectsHandler(wathcerService, pm2Service),
 		DockerHandler:        handler.NewDockerHandler(dockerService),
@@ -73,6 +77,7 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 
 		AuthMiddleware: middleware.AuthMiddleware(userRepository),
 
+		InitHelper:           initHelper,
 		SyncWorker:           syncWorker,
 		ContainerStatsWorker: background.NewContainerStatsWorker(dockerService),
 	}

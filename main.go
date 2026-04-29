@@ -10,9 +10,16 @@ import (
 	"github.com/gofiber/fiber/v2"
 	fiberLogger "github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Println(".env variable not uploaded")
+	}
 
 	db, err := generic.InitDB()
 
@@ -30,6 +37,14 @@ func main() {
 	defer cancel()
 
 	container := src.NewAppContainer(db)
+
+	if err := container.InitHelper.CreateAdminUser(ctx); err != nil {
+		log.Println("Admin createion failed...", err)
+	}
+
+	if err := container.InitHelper.CreateMockPm2Project(ctx); err != nil {
+		log.Println("Mock pm2 project creation failed...", err)
+	}
 
 	//container.SyncWorker.Start(ctx)
 	container.ContainerStatsWorker.Start(ctx)
