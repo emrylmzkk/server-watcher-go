@@ -130,11 +130,43 @@ All responses are wrapped in this structure:
       {
         "pm_id": number,
         "name": "string",
-        "pm2_env": { "status": "string" },
+        "pm2_env": { 
+          "status": "string",
+          "pm_cwd": "string",
+          "pm_exec_path": "string",
+          "interpreter": "string",
+          "restart_time": number
+        },
         "monit": { "cpu": float, "memory": number }
       }
     ]
     ```
+
+### Sync PM2 Projects
+*   **Endpoint:** `POST /sync-projects`
+*   **Description:** Synchronizes local PM2 processes with the database. Adds new processes, updates status, and marks missing ones as "Deleted".
+*   **Response Data:** `boolean`
+
+### Get PM2 Project by ID
+*   **Endpoint:** `GET /:id`
+*   **Response Data:** `Pm2ProjectResponseDTO`
+    ```json
+    {
+      "id": number,
+      "external_id": "string",
+      "name": "string",
+      "project_type": number,
+      "status": "string",
+      "project_path": "string",
+      "project_start_command": "string",
+      "project_runtime_tpye": number
+    }
+    ```
+
+### Clear and Delete PM2 Project
+*   **Endpoint:** `POST /:id/clear-project`
+*   **Description:** Runs `pm2 delete` on the server and removes the project from the database.
+*   **Response Data:** `boolean`
 
 ---
 

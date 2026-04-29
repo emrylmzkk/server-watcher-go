@@ -36,6 +36,24 @@ func (h *Pm2Handler) CreatePm2Project(c *fiber.Ctx) error {
 
 }
 
+func (h *Pm2Handler) GetPm2ProjectById(c *fiber.Ctx) error {
+
+	req, err := generic.ParseParam[int](c, "id")
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(generic.NewErrorResponse("Invalid request body", err.Error()))
+	}
+
+	res, err := h.pm2Service.GetPm2ProjectById(c.Context(), req)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+
+}
+
 func (h *Pm2Handler) DeletePm2Project(c *fiber.Ctx) error {
 
 	req, err := generic.ParseParam[int](c, "id")
@@ -45,6 +63,24 @@ func (h *Pm2Handler) DeletePm2Project(c *fiber.Ctx) error {
 	}
 
 	res, err := h.pm2Service.DeletePm2Project(c.Context(), req)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+
+}
+
+func (h *Pm2Handler) ClearAndDeletePm2Project(c *fiber.Ctx) error {
+
+	req, err := generic.ParseParam[int](c, "id")
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(generic.NewErrorResponse("Invalid request body", err.Error()))
+	}
+
+	res, err := h.pm2Service.ClearAndDeletePm2Project(c.Context(), req)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
@@ -142,6 +178,18 @@ func (h *Pm2Handler) GetPm2InsideList(c *fiber.Ctx) error {
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+
+}
+
+func (h *Pm2Handler) SyncPm2Projects(c *fiber.Ctx) error {
+
+	res, err := h.pm2Service.SyncPm2Projects(c.Context())
+
+	if err != nil {
+		return c.Status(fiber.StatusConflict).JSON(generic.NewErrorResponse("Server Error", err.Error()))
 	}
 
 	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))

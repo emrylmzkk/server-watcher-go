@@ -11,7 +11,6 @@ import (
 	enumModels "server-watcher-app/src/models/enum"
 	repositoryConcrete "server-watcher-app/src/repository/concrete"
 	servicesAbstarct "server-watcher-app/src/services/abstract"
-	"strings"
 	"time"
 )
 
@@ -65,6 +64,41 @@ func (s *pm2ProjectService) AddNewProject(ctx context.Context, dto *modelsDTOs.C
 
 }
 
+func (s *pm2ProjectService) GetPm2ProjectById(ctx context.Context, id int) (*modelsDTOs.Pm2ProjectResponseDTO, error) {
+
+	project, err := s.projectRepo.GetByID(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := &modelsDTOs.Pm2ProjectResponseDTO{
+		ID:         project.ID,
+		ExternalID: project.ExternalID,
+		Name:       project.Name,
+		Type:       project.Type,
+		Status:     enumModels.ProjectStatus(project.Status),
+		// ProjectPath:         *project.ProjectPath,
+		// ProjectStartCommand: *project.ProjectStartCommand,
+		// ProjectRuntimeType:  *project.ProjectRuntimeType,
+	}
+
+	if project.ProjectPath != nil {
+		response.ProjectPath = *project.ProjectPath
+	}
+
+	if project.ProjectStartCommand != nil {
+		response.ProjectStartCommand = *project.ProjectStartCommand
+	}
+
+	if project.ProjectRuntimeType != nil {
+		response.ProjectRuntimeType = *project.ProjectRuntimeType
+	}
+
+	return response, nil
+
+}
+
 func (s *pm2ProjectService) UpdatePm2Project(ctx context.Context, id int, dto *modelsDTOs.UpdatePm2ProjectRequestDTO) (bool, error) {
 
 	pm2Project, err := s.projectRepo.GetByID(ctx, id)
@@ -87,6 +121,33 @@ func (s *pm2ProjectService) UpdatePm2Project(ctx context.Context, id int, dto *m
 	}
 
 	err = s.projectRepo.Update(ctx, pm2Project)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+
+}
+
+func (s *pm2ProjectService) ClearAndDeletePm2Project(ctx context.Context, id int) (bool, error) {
+
+	project, err := s.projectRepo.GetByID(ctx, id)
+
+	if err != nil {
+		return false, err
+	}
+
+	cmd := generic.NewCmd(ctx, "pm2", "delete", project.Name)
+
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		log.Printf("[PM2 Warning] Süreç PM2 listesinde bulunamadı veya silinemedi: %s", string(output))
+		return false, err
+	}
+
+	err = s.projectRepo.Delete(ctx, id)
+
 	if err != nil {
 		return false, err
 	}
@@ -165,20 +226,7 @@ func (s *pm2ProjectService) StartPm2Project(ctx context.Context, id int) (bool, 
 		return false, err
 	}
 
-	if project.ProjectStartCommand == nil || project.ProjectPath == nil {
-		return false, errors.New("project start command or path is missing")
-	}
-
-	generic.NewCmd(ctx, "pm2", "delete", project.Name).Run()
-
-	startCommand := *project.ProjectStartCommand
-	startCommand = strings.TrimPrefix(startCommand, "pm2 start ")
-	if idx := strings.Index(startCommand, " --name"); idx != -1 {
-		startCommand = startCommand[:idx]
-	}
-	startCommand = strings.Trim(startCommand, "'\" ")
-
-	cmd := generic.NewCmdInDir(ctx, *project.ProjectPath, "pm2", "start", startCommand, "--name", project.Name)
+	cmd := generic.NewCmd(ctx, "pm2", "start", project.ExternalID)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -304,8 +352,7 @@ func (s *pm2ProjectService) CreateExamplePm2Project(ctx context.Context) error {
 
 	mockExternal := "example-project"
 
-
-	isExist, err := s.projectRepo.IsProjectExist(ctx,mockExternal)
+	isExist, err := s.projectRepo.IsProjectExist(ctx, mockExternal)
 
 	if err != nil {
 		return nil
@@ -337,9 +384,97 @@ func (s *pm2ProjectService) CreateExamplePm2Project(ctx context.Context) error {
 		log.Println("[MockPm2Project] Mock Pm2 project created successfuly")
 		return nil
 
-
 	}
 
 	return nil
+
+}
+
+func (s *pm2ProjectService) SyncPm2Projects(ctx context.Context) (bool, error) {
+
+	currentPm2InsideList, err := s.GetPm2InsideList(ctx)
+
+	if err != nil {
+		return false, nil
+	}
+
+	dbPm2List, err := s.projectRepo.GetPm2Projects(ctx)
+
+	if err != nil {
+		return false, nil
+	}
+
+	if len(*currentPm2InsideList) == 0 {
+		return false, errors.New("No processes were found in the PM2 system; the deletion process was halted for security reasons")
+	}
+
+	dbMap := make(map[string]models.MonitoredEntity)
+
+	for _, pm2Project := range dbPm2List {
+		dbMap[pm2Project.ExternalID] = pm2Project
+	}
+
+	for _, currentPm2 := range *currentPm2InsideList {
+
+		status := string(enumModels.Exited)
+
+		if currentPm2.Pm2Env.Status == "online" {
+			status = string(enumModels.Running)
+		}
+
+		if existing, ok := dbMap[currentPm2.Name]; ok {
+
+			err = s.projectRepo.Query(ctx).Model(&models.MonitoredEntity{}).
+				Where("id = ?", existing.ID).
+				Updates(map[string]interface{}{
+					"stauts":     status,
+					"last_check": time.Now(),
+				}).Error
+
+		} else {
+
+			newProject := models.MonitoredEntity{
+				ExternalID:          currentPm2.Name,
+				Name:                currentPm2.Name,
+				Type:                enumModels.PM2,
+				Status:              status,
+				LastCheck:           time.Now(),
+				ProjectPath:         &currentPm2.Pm2Env.ProjectDir,
+				ProjectStartCommand: &currentPm2.Pm2Env.ExecPath,
+			}
+
+			err = s.projectRepo.Create(ctx, &newProject)
+
+		}
+
+		if err != nil {
+			log.Printf("Sync hatası (%s): %v", currentPm2.Name, err)
+		}
+
+		delete(dbMap, currentPm2.Name)
+
+	}
+
+	// for _, exitedProject := range dbMap {
+
+	// 	err := s.projectRepo.Delete(ctx, exitedProject.ID)
+	// 	if err != nil {
+	// 		log.Printf("Silme hatası (ID: %d, Name: %s): %v", exitedProject.ID, exitedProject.Name, err)
+	// 	} else {
+	// 		log.Printf("[Sync] Sistemde bulunmayan proje DB'den silindi: %s", exitedProject.Name)
+	// 	}
+
+	// }
+
+	for _, leftProject := range dbMap {
+		s.projectRepo.Query(ctx).Model(&models.MonitoredEntity{}).
+			Where("id = ?", leftProject.ID).
+			Updates(map[string]interface{}{
+				"status": string(enumModels.Deleted),
+			})
+
+	}
+
+	return true, nil
 
 }

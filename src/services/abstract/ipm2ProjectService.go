@@ -15,4 +15,7 @@ type Pm2ProjectService interface {
 	ResetPm2Process(ctx context.Context) (bool, error)
 	GetPm2InsideList(ctx context.Context) (*[]modelsDTOs.Pm2InsideListResponseDTO, error)
 	CreateExamplePm2Project(ctx context.Context) error
+	SyncPm2Projects(ctx context.Context) (bool, error)
+	GetPm2ProjectById(ctx context.Context, id int) (*modelsDTOs.Pm2ProjectResponseDTO, error)
+	ClearAndDeletePm2Project(ctx context.Context, id int) (bool, error)
 }

@@ -34,13 +34,17 @@ type UpdatePm2ProjectRequestDTO struct {
 }
 
 type Pm2InsideListResponseDTO struct {
-	PMId   int    `json:"pm_id"`
-	Name   string `json:"name"`
-	Pm2Env struct {
-		Status string `json:"status"`
-	} `json:"pm2_env"`
+	Name  string `json:"name"`
+	PmID  int    `json:"pm_id"`
 	Monit struct {
+		Memory uint64  `json:"memory"`
 		CPU    float64 `json:"cpu"`
-		Memory int64   `json:"memory"` // bytes
 	} `json:"monit"`
+	Pm2Env struct {
+		Status          string `json:"status"`
+		ProjectDir      string `json:"pm_cwd"`
+		ExecPath        string `json:"pm_exec_path"`
+		Interpreter     string `json:"interpreter"`
+		RestartAttempts int    `json:"restart_time"`
+	} `json:"pm2_env"`
 }
