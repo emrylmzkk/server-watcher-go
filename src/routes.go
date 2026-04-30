@@ -24,7 +24,7 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 	pm2.Delete("/:id", container.Pm2Handler.DeletePm2Project)
 	pm2.Get("/projects", container.Pm2Handler.GetAllPm2Projects)
 	pm2.Put("/:id", container.Pm2Handler.UpdatePm2Project)
-	pm2.Post("/reset", container.Pm2Handler.ResetPm2Process)
+	pm2.Post("/:externalId/restart", container.Pm2Handler.ResetPm2Process)
 	pm2.Get("/inside-list", container.Pm2Handler.GetPm2InsideList)
 	pm2.Post("/sync-projects", container.Pm2Handler.SyncPm2Projects)
 	pm2.Get("/:id", container.Pm2Handler.GetPm2ProjectById)

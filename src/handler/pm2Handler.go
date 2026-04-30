@@ -162,7 +162,12 @@ func (h *Pm2Handler) UpdatePm2Project(c *fiber.Ctx) error {
 
 func (h *Pm2Handler) ResetPm2Process(c *fiber.Ctx) error {
 
-	res, err := h.pm2Service.ResetPm2Process(c.Context())
+	id, err := generic.ParseParam[string](c, "externalId")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(generic.NewErrorResponse("Invalid request body", err.Error()))
+	}
+
+	res, err := h.pm2Service.ResetPm2Process(c.Context(), id)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))

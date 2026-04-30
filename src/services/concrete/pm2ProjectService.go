@@ -152,6 +152,10 @@ func (s *pm2ProjectService) ClearAndDeletePm2Project(ctx context.Context, id int
 		return false, err
 	}
 
+	//kullancidan bagimsiz, kullanci iptal etse bile arka planda devam eder
+	// go --> async yapar
+	go s.savePm2State(context.Background())
+
 	return true, nil
 
 }
@@ -242,6 +246,8 @@ func (s *pm2ProjectService) StartPm2Project(ctx context.Context, id int) (bool, 
 		return false, err
 	}
 
+	go s.savePm2State(context.Background())
+
 	return true, nil
 
 }
@@ -276,37 +282,53 @@ func (s *pm2ProjectService) StopPm2Project(ctx context.Context, id int) (bool, e
 		return false, err
 	}
 
+	go s.savePm2State(context.Background())
+
 	return true, nil
 
 }
 
-func (s *pm2ProjectService) ResetPm2Process(ctx context.Context) (bool, error) {
+func (s *pm2ProjectService) ResetPm2Process(ctx context.Context, externalId string) (bool, error) {
 
-	cmd := generic.NewCmd(ctx, "pm2", "delete", "all")
+	cmd := generic.NewCmd(ctx, "pm2", "restart", externalId)
 
 	output, err := cmd.CombinedOutput()
+
 	if err != nil {
 		return false, errors.New(string(output))
 	}
 
-	projects, err := s.projectRepo.GetPm2Projects(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	for _, project := range projects {
-		err = s.projectRepo.Query(ctx).Model(&models.MonitoredEntity{}).Where("id = ?", project.ID).Updates(map[string]interface{}{
-			"status":     string(enumModels.Exited),
-			"last_check": time.Now(),
-		}).Error
-		if err != nil {
-			return false, err
-		}
-	}
-
 	return true, nil
 
 }
+
+// func (s *pm2ProjectService) ResetPm2Process(ctx context.Context) (bool, error) {
+
+// 	cmd := generic.NewCmd(ctx, "pm2", "delete", "all")
+
+// 	output, err := cmd.CombinedOutput()
+// 	if err != nil {
+// 		return false, errors.New(string(output))
+// 	}
+
+// 	projects, err := s.projectRepo.GetPm2Projects(ctx)
+// 	if err != nil {
+// 		return false, err
+// 	}
+
+// 	for _, project := range projects {
+// 		err = s.projectRepo.Query(ctx).Model(&models.MonitoredEntity{}).Where("id = ?", project.ID).Updates(map[string]interface{}{
+// 			"status":     string(enumModels.Exited),
+// 			"last_check": time.Now(),
+// 		}).Error
+// 		if err != nil {
+// 			return false, err
+// 		}
+// 	}
+
+// 	return true, nil
+
+// }
 
 // func (s *pm2ProjectService) GetPm2InsideList(ctx context.Context) (*[]modelsDTOs.Pm2InsideListResponseDTO, error) {
 
@@ -475,6 +497,22 @@ func (s *pm2ProjectService) SyncPm2Projects(ctx context.Context) (bool, error) {
 
 	}
 
+	go s.savePm2State(context.Background())
+
 	return true, nil
+
+}
+
+func (s *pm2ProjectService) savePm2State(ctx context.Context) {
+
+	cmd := generic.NewCmd(ctx, "pm2", "save")
+
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		log.Printf("[PM2 Save Error] Liste kaydedilemedi: %s", string(output))
+	} else {
+		log.Println("[PM2 Save] Süreç listesi başarıyla diske kaydedildi.")
+	}
 
 }
