@@ -13,4 +13,5 @@ type User struct {
 	Name     string              `gorm:"not null"`
 	Surname  string              `gorm:"not null"`
 	UserRole enumModels.UserRole `gorm:"not null; default:2"`
+	FCMToken *string             `gorm:"type:varchar(255)"`
 }

@@ -29,3 +29,7 @@ type UserResponseDTO struct {
 type RefreshTokenRequestDTO struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }
+
+type UserFCMTokenRequestDTO struct {
+	UserDeviceFCMToken string `json:"fcm_token" validate:"required"`
+}

@@ -15,6 +15,7 @@ type UserRepository interface {
 	IsUserExists(ctx context.Context, username string) (bool, error)
 	GetByUserName(ctx context.Context, username string) (*models.User, error)
 	IsUserAdmin(ctx context.Context, userId uint) (bool, error)
+	GetAdminUser(ctx context.Context) (*models.User, error)
 }
 
 type userRepository struct {
@@ -75,5 +76,21 @@ func (r *userRepository) IsUserAdmin(ctx context.Context, userId uint) (bool, er
 	}
 
 	return user.UserRole == enumModels.Admin, nil
+
+}
+
+func (r *userRepository) GetAdminUser(ctx context.Context) (*models.User, error) {
+
+	var user models.User
+
+	err := r.Query(ctx).
+		Where("user_role = ?", enumModels.Admin).
+		First(&user).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 
 }

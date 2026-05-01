@@ -55,6 +55,50 @@ func (s *authService) Register(ctx context.Context, dto *modelsDTOs.RegisterRequ
 
 }
 
+func (s *authService) TakeUserFCMToken(ctx context.Context, userID int, dto *modelsDTOs.UserFCMTokenRequestDTO) (bool, error) {
+
+	//var user models.User
+
+	user, err := s.userRepository.GetByID(ctx, userID)
+
+	if err != nil {
+		return false, errors.New("user not found by information")
+	}
+
+	user.FCMToken = &dto.UserDeviceFCMToken
+
+	err = s.userRepository.Update(ctx, user)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+
+}
+
+func (s *authService) RemoveUserFCMToken(ctx context.Context, userID int) (bool, error) {
+
+	//var user models.User
+
+	user, err := s.userRepository.GetByID(ctx, userID)
+
+	if err != nil {
+		return false, errors.New("user not found by information")
+	}
+
+	user.FCMToken = nil
+
+	err = s.userRepository.Update(ctx, user)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+
+}
+
 func (s *authService) Login(ctx context.Context, dto *modelsDTOs.LoginRequestDTO) (*modelsDTOs.AuthResponseDTO, error) {
 
 	user, err := s.userRepository.GetByUserName(ctx, dto.Username)

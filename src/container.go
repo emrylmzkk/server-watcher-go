@@ -3,6 +3,7 @@ package src
 import (
 	"log"
 	"server-watcher-app/src/background"
+	"server-watcher-app/src/generic"
 	"server-watcher-app/src/handler"
 	"server-watcher-app/src/middleware"
 	repositoryConcrete "server-watcher-app/src/repository/concrete"
@@ -31,6 +32,8 @@ type AppContainer struct {
 
 func NewAppContainer(db *gorm.DB) *AppContainer {
 
+	fcmClient := generic.InitFirebaseMessaging()
+
 	projectRepo := repositoryConcrete.NewSqliteRepository(db)
 	pm2ProjectRepo := repositoryConcrete.NewProjectRepository(db)
 	userRepository := repositoryConcrete.NewUserRepository(db)
@@ -48,7 +51,9 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 		log.Printf("Docker service could not be started: %v", err)
 	}
 
-	serverGeneralService := servicesConcrete.NewServerGeneralService()
+	notificationService := servicesConcrete.NewNotificationService(fcmClient)
+
+	serverGeneralService := servicesConcrete.NewServerGeneralService(notificationService, userRepository)
 	authService := servicesConcrete.NewAuthService(userRepository)
 	containerStatService := servicesConcrete.NewContainerStatService(containerStatRepo)
 
