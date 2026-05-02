@@ -49,6 +49,8 @@ func main() {
 	//container.SyncWorker.Start(ctx)
 	container.ContainerStatsWorker.Start(ctx)
 
+	container.SystemNotification.Start(ctx)
+
 	src.SetupRoutes(app, container)
 
 	backendPort := os.Getenv("BACKEND_PORT")

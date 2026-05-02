@@ -28,6 +28,7 @@ type AppContainer struct {
 	AuthMiddleware       fiber.Handler
 	SyncWorker           *background.SyncWorker
 	ContainerStatsWorker *background.ContainerStatsWorker
+	SystemNotification   *background.SystemStatsWorker
 }
 
 func NewAppContainer(db *gorm.DB) *AppContainer {
@@ -85,6 +86,7 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 		InitHelper:           initHelper,
 		SyncWorker:           syncWorker,
 		ContainerStatsWorker: background.NewContainerStatsWorker(dockerService),
+		SystemNotification:   background.NewSystemStatsWatcher(serverGeneralService),
 	}
 
 }

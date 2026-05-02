@@ -12,4 +12,5 @@ type IServerGeneralService interface {
 	GetDiskStats(ctx context.Context) (used, total, percent float64, err error)
 	GetSystemStats(ctx context.Context) (*models.SystemStats, error)
 	//GetSystemStats() (*SystemStats, error)
+	GetStatsForNotification(ctx context.Context) (*models.SystemStats, error)
 }

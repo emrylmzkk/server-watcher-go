@@ -6,4 +6,5 @@ const (
 	TypeCPUUsage  NotificationType = "CPU_USAGE"
 	TypeDiskUsage NotificationType = "DISK_USAGE"
 	TypeSystem    NotificationType = "SYSTEM_ALERTS"
+	TypeRAMUsage  NotificationType = "RAM_USAGE"
 )

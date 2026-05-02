@@ -61,6 +61,23 @@ All responses are wrapped in this structure:
     }
     ```
 
+### Take User FCM Token
+*   **Endpoint:** `POST /take-fmctoken`
+*   **Middleware:** `AuthToken` Required
+*   **Request DTO:**
+    ```json
+    {
+      "fcm_token": "string"
+    }
+    ```
+*   **Response Data:** `boolean`
+
+### Remove User FCM Token
+*   **Endpoint:** `POST /remove-fcmtoken`
+*   **Middleware:** `AuthToken` Required
+*   **Request DTO:** None
+*   **Response Data:** `boolean`
+
 ---
 
 ## 2. PM2 Management (`/api/v1/pm2`)
@@ -115,11 +132,11 @@ All responses are wrapped in this structure:
 *   **Endpoint:** `DELETE /:id`
 *   **Response Data:** `boolean`
 
-### Start/Stop/Reset
+### Start/Stop/Restart
 *   **Endpoints:** 
     *   `POST /start/:id`
     *   `POST /stop/:id`
-    *   `POST /reset`
+    *   `POST /:externalId/restart`
 *   **Response Data:** `boolean`
 
 ### Get PM2 Real-time List
@@ -253,7 +270,7 @@ All responses are wrapped in this structure:
 - `1`: Go, `2`: Python, `3`: React, `4`: Expo
 
 ### `ProjectStatus` (string)
-- `"exited"`, `"closed"`, `"dead"`
+- `"exited"`, `"running"`, `"dead"`, `"errored"`, `"stopping"`, `"deleted"`
 
 ### `UserRole` (int)
 - `95`: Admin, `2`: Member

@@ -2,6 +2,7 @@ package servicesConcrete
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math"
 	"server-watcher-app/src/models"
@@ -41,17 +42,17 @@ func (s *serverGeneralService) GetCPUPercent(ctx context.Context) (float64, erro
 
 	val := math.Round(percentages[0]*10) / 10
 
-	if val > 10.0 {
-		log.Printf("Buraya girdi")
-		user, _ := s.userRepo.GetAdminUser(ctx)
+	// if val > 10.0 {
+	// 	log.Printf("Buraya girdi")
+	// 	user, _ := s.userRepo.GetAdminUser(ctx)
 
-		log.Printf("Gelen kullanici", user)
+	// 	//log.Printf("Gelen kullanici", user)
 
-		if user.FCMToken != nil {
-			s.notificationsService.SendToUser(user.ID, *user.FCMToken, "Yüksek CPU Uyarısı!", "Sunucu CPU kullanımı sınırı aştı", enumNotification.TypeCPUUsage)
-		}
+	// 	if user.FCMToken != nil {
+	// 		s.notificationsService.SendToUser(user.ID, *user.FCMToken, "Yüksek CPU Uyarısı!", "Sunucu CPU kullanımı sınırı aştı", enumNotification.TypeCPUUsage)
+	// 	}
 
-	}
+	// }
 
 	return val, nil
 
@@ -112,4 +113,70 @@ func (s *serverGeneralService) GetSystemStats(ctx context.Context) (*models.Syst
 		DiskTotalGB: dTotal,
 		DiskPercent: dPercent,
 	}, nil
+}
+
+type threshConfig struct {
+	CPUPercent  float64
+	RAMPercent  float64
+	DiskPercent float64
+}
+
+func (s *serverGeneralService) checkAndNotify(ctx context.Context, stats *models.SystemStats) {
+
+	var defaultThresholds = threshConfig{
+		CPUPercent:  10.0,
+		RAMPercent:  10.0,
+		DiskPercent: 10.0,
+	}
+
+	user, err := s.userRepo.GetAdminUser(ctx)
+
+	if err != nil {
+		log.Printf("Error occured while retrieving user for the notification: %v", err)
+		return
+	}
+
+	if user.FCMToken == nil {
+		log.Printf("FCM Token not found for user: %v", user.ID)
+		return
+	}
+
+	log.Printf("CPU usage: %v, RAM usage: %v, Disk usage: %v", stats.CPUPercent, stats.RAMPercent, stats.DiskPercent)
+
+	if stats.CPUPercent > defaultThresholds.CPUPercent {
+		s.notificationsService.SendToUser(user.ID, *user.FCMToken, "Yüksek CPU!", "CPU kullanımı: %"+fmt.Sprintf("%.1f", stats.CPUPercent), enumNotification.TypeCPUUsage)
+		log.Printf("CPU usage: %v, RAM usage: %v, Disk usage: %v", stats.CPUPercent, stats.RAMPercent, stats.DiskPercent)
+	}
+
+	if stats.RAMPercent > defaultThresholds.RAMPercent {
+		s.notificationsService.SendToUser(user.ID, *user.FCMToken, "Yüksek RAM!", "RAM kullanımı: %"+fmt.Sprintf("%.1f", stats.RAMPercent), enumNotification.TypeRAMUsage)
+		log.Printf("RAM usage notification sent. RAM usage: %v", stats.RAMPercent)
+	}
+
+	if stats.DiskPercent > defaultThresholds.DiskPercent {
+		s.notificationsService.SendToUser(user.ID, *user.FCMToken, "Disk Doluyor!", "Disk kullanımı: %"+fmt.Sprintf("%.1f", stats.DiskPercent), enumNotification.TypeDiskUsage)
+		log.Printf("Disk usage notification sent. Disk usage: %v", stats.DiskPercent)
+	}
+
+}
+
+func (s *serverGeneralService) GetStatsForNotification(ctx context.Context) (*models.SystemStats, error) {
+
+	log.Printf("Attempting to retrieve stats for the notification...")
+
+	stats, err := s.GetSystemStats(ctx)
+
+	if err != nil {
+		log.Printf("Error occured while retrieving stats for the notification: %v", err)
+		return nil, fmt.Errorf("Error occured while retrieving stats for the notification: %v", err)
+	}
+
+	log.Printf("Stats retrieved successfully: %v", stats)
+
+	s.checkAndNotify(ctx, stats)
+
+	log.Printf("Notification check completed")
+
+	return nil, nil
+
 }
