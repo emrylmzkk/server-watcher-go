@@ -7,6 +7,7 @@ import (
 	"server-watcher-app/src/generic"
 	"server-watcher-app/src/models"
 	modelsDTOs "server-watcher-app/src/models/dtos"
+	enumModels "server-watcher-app/src/models/enum"
 	repositoryConcrete "server-watcher-app/src/repository/concrete"
 	servicesAbstarct "server-watcher-app/src/services/abstract"
 
@@ -204,5 +205,50 @@ func (s *authService) GetCurrentUserInformation(ctx context.Context, userId int)
 		Surname:  user.Surname,
 		UserRole: user.UserRole,
 	}, nil
+
+}
+
+func (s *authService) GetAllUser(ctx context.Context, userID uint) (*[]modelsDTOs.UserResponseDTO, error) {
+
+	var users []modelsDTOs.UserResponseDTO
+
+	isAdmin, err := s.userRepository.IsUserAdmin(ctx, userID)
+
+	if err != nil || !isAdmin {
+		return &users, nil
+	}
+
+	dbUsers, err := s.userRepository.GetAll(ctx)
+
+	if err != nil {
+		return &users, err
+	}
+
+	for _, user := range dbUsers {
+		users = append(users, modelsDTOs.UserResponseDTO{
+			ID:       int(user.ID),
+			Name:     user.Name,
+			Surname:  user.Surname,
+			UserRole: user.UserRole,
+		})
+	}
+
+	return &users, nil
+
+}
+
+func (s *authService) DeleteUser(ctx context.Context, id int, userID uint) (bool, error) {
+
+	user, err := s.userRepository.GetByID(ctx, int(userID))
+
+	if err != nil {
+		return false, nil
+	}
+
+	if user.UserRole == enumModels.Admin {
+		return false, errors.New("The delete operation cannot be performed for the Admin user")
+	}
+
+	err = s.userRepository.Dlete()
 
 }

@@ -14,6 +14,21 @@ All responses are wrapped in this structure:
 ```
 
 
+## 1. Authentication (`/api/v1/auth`)
+
+### Register
+*   **Endpoint:** `POST /register`
+*   **Request DTO:**
+    ```json
+    {
+      "username": "string",
+      "password": "string",
+      "name": "string",
+      "surname": "string"
+    }
+    ```
+*   **Response Data:** `AuthResponseDTO` (See Login)
+
 ### Login
 *   **Endpoint:** `POST /login`
 *   **Request DTO:**
@@ -226,6 +241,10 @@ All responses are wrapped in this structure:
     *   `POST /stop/:id`
 *   **Response Data:** `string` (e.g., "Container started")
 
+### Get Active Containers
+*   **Endpoint:** `GET /active-containers`
+*   **Response Data:** `[]DockerContainerResponseDTO` (See structure in Get Containers)
+
 ---
 
 ## 4. Container Stats (`/api/v1/docker-stats`)
@@ -261,7 +280,43 @@ All responses are wrapped in this structure:
 
 ---
 
-## 6. Enumerations
+## 6. User Preferences (`/api/v1/user-preferences`)
+*All require `AuthToken`*
+
+### Create/Update Server Stat Preference
+*   **Endpoint:** `POST /create`
+*   **Request DTO:**
+    ```json
+    {
+      "cpu_threshold": float,
+      "ram_threshold": float,
+      "disk_threshold": float,
+      "cooldown_minute": number
+    }
+    ```
+*   **Response Data:** `boolean`
+
+### Get User Server Stat Settings
+*   **Endpoint:** `GET /user-stats-settings`
+*   **Description:** Returns the current user's threshold settings for notifications. If no settings are found, default values are returned with `is_default: true`.
+*   **Response Data:** `ServerStatusSettingDTO`
+    ```json
+    {
+      "cpu_threshold": float,
+      "ram_threshold": float,
+      "disk_threshold": float,
+      "cooldown_minute": number,
+      "is_default": boolean
+    }
+    ```
+
+### Clear Server Stat Preference
+*   **Endpoint:** `DELETE /clear`
+*   **Response Data:** `boolean`
+
+---
+
+## 7. Enumerations
 
 ### `ProcessType` (int)
 - `1`: Docker, `2`: PM2

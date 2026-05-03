@@ -131,3 +131,21 @@ func (h *AuthHandler) RemoveUserFCMToken(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
 
 }
+
+func (h *AuthHandler) GetAllUsers(c *fiber.Ctx) error {
+
+	currentUser := generic.GetCurrentUser(c)
+
+	if currentUser == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(generic.NewErrorResponse("Unauthorized", nil))
+	}
+
+	res, err := h.authService.GetAllUser(c.Context(), currentUser.ID)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+
+}

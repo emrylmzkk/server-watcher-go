@@ -16,12 +16,14 @@ import (
 )
 
 type AppContainer struct {
-	DockerHandler        *handler.DockerHandler
-	Pm2Handler           *handler.Pm2Handler
-	ServerGeneralHandler *handler.ServerGeneralHandler
-	AuthHandler          *handler.AuthHandler
-	ContainerStatHandler *handler.ContainerStatHandler
-	PublicHandler        *handler.PublicHandler
+	DockerHandler          *handler.DockerHandler
+	Pm2Handler             *handler.Pm2Handler
+	ServerGeneralHandler   *handler.ServerGeneralHandler
+	AuthHandler            *handler.AuthHandler
+	ContainerStatHandler   *handler.ContainerStatHandler
+	UserPreferencesHandler *handler.UserPreferencesHandler
+
+	PublicHandler *handler.PublicHandler
 
 	InitHelper *background.InitHelper
 
@@ -39,6 +41,7 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 	pm2ProjectRepo := repositoryConcrete.NewProjectRepository(db)
 	userRepository := repositoryConcrete.NewUserRepository(db)
 	containerStatRepo := repositoryConcrete.NewContainerStatLogRepo(db)
+	userPreferencesRepo := repositoryConcrete.NewUserPreferencesRepository(db)
 
 	dockerProv, err := servicesConcrete.NewDockerProvider()
 
@@ -57,6 +60,7 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 	serverGeneralService := servicesConcrete.NewServerGeneralService(notificationService, userRepository)
 	authService := servicesConcrete.NewAuthService(userRepository)
 	containerStatService := servicesConcrete.NewContainerStatService(containerStatRepo)
+	userPreferencesService := servicesConcrete.NewUserPreferencesService(userPreferencesRepo)
 
 	pm2Prov := servicesConcrete.NewPM2Provider(pm2ProjectRepo)
 
@@ -74,12 +78,14 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 
 	return &AppContainer{
 		//ProjectHandler: handler.NewProjectsHandler(wathcerService, pm2Service),
-		DockerHandler:        handler.NewDockerHandler(dockerService),
-		Pm2Handler:           handler.NewPm2Handler(pm2Service),
-		ServerGeneralHandler: handler.NewServerGeneralHandler(serverGeneralService),
-		AuthHandler:          handler.NewAuthHandler(authService),
-		ContainerStatHandler: handler.NewContainerStatHandler(containerStatService),
-		PublicHandler:        handler.NewPublicHandler(),
+		DockerHandler:          handler.NewDockerHandler(dockerService),
+		Pm2Handler:             handler.NewPm2Handler(pm2Service),
+		ServerGeneralHandler:   handler.NewServerGeneralHandler(serverGeneralService),
+		AuthHandler:            handler.NewAuthHandler(authService),
+		ContainerStatHandler:   handler.NewContainerStatHandler(containerStatService),
+		UserPreferencesHandler: handler.NewUserPreferencesHandler(userPreferencesService),
+
+		PublicHandler: handler.NewPublicHandler(),
 
 		AuthMiddleware: middleware.AuthMiddleware(userRepository),
 

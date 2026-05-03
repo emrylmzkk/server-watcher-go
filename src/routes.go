@@ -18,6 +18,7 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 	auth.Get("/me", container.AuthMiddleware, container.AuthHandler.GetCurrentUserInformation)
 	auth.Post("/take-fmctoken", container.AuthMiddleware, container.AuthHandler.TakeUserFCMToken)
 	auth.Post("/remove-fcmtoken", container.AuthMiddleware, container.AuthHandler.RemoveUserFCMToken)
+	auth.Post("/users", container.AuthMiddleware, container.AuthHandler.GetAllUsers)
 
 	pm2 := api.Group("/pm2", container.AuthMiddleware)
 	pm2.Post("/create", container.Pm2Handler.CreatePm2Project)
@@ -48,5 +49,10 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 	serverGeneral.Get("/ram", container.ServerGeneralHandler.GetRamStats)
 	serverGeneral.Get("/disk", container.ServerGeneralHandler.GetDiskStats)
 	serverGeneral.Get("/stats", container.ServerGeneralHandler.GetGeneralStats)
+
+	userPreferences := api.Group("user-preferences", container.AuthMiddleware)
+	userPreferences.Post("/create", container.UserPreferencesHandler.CreateServerStatPreference)
+	userPreferences.Delete("/clear", container.UserPreferencesHandler.ClearServerStatPreference)
+	userPreferences.Get("/user-stats-settings", container.UserPreferencesHandler.GetUserSSTSettings)
 
 }

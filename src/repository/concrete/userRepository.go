@@ -16,6 +16,7 @@ type UserRepository interface {
 	GetByUserName(ctx context.Context, username string) (*models.User, error)
 	IsUserAdmin(ctx context.Context, userId uint) (bool, error)
 	GetAdminUser(ctx context.Context) (*models.User, error)
+	GetUserServerStatNotifSetting(ctx context.Context, userID uint) (*models.SSTSettings, error)
 }
 
 type userRepository struct {
@@ -92,5 +93,29 @@ func (r *userRepository) GetAdminUser(ctx context.Context) (*models.User, error)
 	}
 
 	return &user, nil
+
+}
+
+func (r *userRepository) GetUserServerStatNotifSetting(ctx context.Context, userID uint) (*models.SSTSettings, error) {
+
+	var settings models.SSTSettings
+
+	err := r.Query(ctx).
+		Model(&models.SSTSettings{}).
+		Where("user_id = ?", userID).
+		First(&settings).
+		Error
+
+	if err != nil {
+		return &models.SSTSettings{
+			CPUThreshold:         80.0,
+			RAMThreshold:         80.0,
+			DISKThreshold:        80.0,
+			NotificationCooldown: 5,
+		}, nil
+
+	}
+
+	return &settings, nil
 
 }

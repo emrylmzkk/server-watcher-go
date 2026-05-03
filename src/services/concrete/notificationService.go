@@ -24,7 +24,7 @@ func NewNotificationService(fcmClient *messaging.Client) servicesAbstarct.INotif
 	}
 }
 
-func (s *notificationService) SendToUser(userID uint, token string, title string, body string, notifType enumNotification.NotificationType) error {
+func (s *notificationService) SendToUser(userID uint, token string, title string, body string, cooldown int, notifType enumNotification.NotificationType) error {
 
 	if token == "" {
 		log.Printf("[FCM] Uyarı: Kullanıcı %v için token boş, gönderim iptal edildi.", userID)
@@ -34,8 +34,8 @@ func (s *notificationService) SendToUser(userID uint, token string, title string
 	cacheKey := fmt.Sprintf("%d_%s", userID, notifType)
 
 	if lastSent, ok := s.cooldowns.Load(cacheKey); ok {
-		if time.Since(lastSent.(time.Time)) < 5*time.Minute {
-			log.Printf("[FCM] Spam Engellendi: Kullanıcı %d, Tip %s (Henüz 5 dk dolmadı)", userID, notifType)
+		if time.Since(lastSent.(time.Time)) < time.Duration(cooldown)*time.Minute {
+			log.Printf("[FCM] Spam Engellendi: Kullanıcı %d, Tip %s (Henüz %d dk dolmadı)", userID, notifType, cooldown)
 			return nil
 		}
 	}

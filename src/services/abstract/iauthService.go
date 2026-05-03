@@ -13,4 +13,5 @@ type AuthService interface {
 	CreateAdminUser(ctx context.Context, uName string, password string) error
 	TakeUserFCMToken(ctx context.Context, userID int, dto *modelsDTOs.UserFCMTokenRequestDTO) (bool, error)
 	RemoveUserFCMToken(ctx context.Context, userID int) (bool, error)
+	GetAllUser(ctx context.Context, userID uint) (*[]modelsDTOs.UserResponseDTO, error)
 }

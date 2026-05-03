@@ -123,11 +123,11 @@ type threshConfig struct {
 
 func (s *serverGeneralService) checkAndNotify(ctx context.Context, stats *models.SystemStats) {
 
-	var defaultThresholds = threshConfig{
-		CPUPercent:  10.0,
-		RAMPercent:  10.0,
-		DiskPercent: 10.0,
-	}
+	// var defaultThresholds = threshConfig{
+	// 	CPUPercent:  80.0,
+	// 	RAMPercent:  80.0,
+	// 	DiskPercent: 80.0,
+	// }
 
 	user, err := s.userRepo.GetAdminUser(ctx)
 
@@ -141,20 +141,26 @@ func (s *serverGeneralService) checkAndNotify(ctx context.Context, stats *models
 		return
 	}
 
+	settings, err := s.userRepo.GetUserServerStatNotifSetting(ctx, user.ID)
+
+	if err != nil {
+		log.Printf("Settings could not be retrieved; default notificatio settings will be used")
+	}
+
 	log.Printf("CPU usage: %v, RAM usage: %v, Disk usage: %v", stats.CPUPercent, stats.RAMPercent, stats.DiskPercent)
 
-	if stats.CPUPercent > defaultThresholds.CPUPercent {
-		s.notificationsService.SendToUser(user.ID, *user.FCMToken, "Yüksek CPU!", "CPU kullanımı: %"+fmt.Sprintf("%.1f", stats.CPUPercent), enumNotification.TypeCPUUsage)
+	if stats.CPUPercent > settings.CPUThreshold {
+		s.notificationsService.SendToUser(user.ID, *user.FCMToken, "Yüksek CPU!", "CPU kullanımı: %"+fmt.Sprintf("%.1f", stats.CPUPercent), settings.NotificationCooldown, enumNotification.TypeCPUUsage)
 		log.Printf("CPU usage: %v, RAM usage: %v, Disk usage: %v", stats.CPUPercent, stats.RAMPercent, stats.DiskPercent)
 	}
 
-	if stats.RAMPercent > defaultThresholds.RAMPercent {
-		s.notificationsService.SendToUser(user.ID, *user.FCMToken, "Yüksek RAM!", "RAM kullanımı: %"+fmt.Sprintf("%.1f", stats.RAMPercent), enumNotification.TypeRAMUsage)
+	if stats.RAMPercent > settings.RAMThreshold {
+		s.notificationsService.SendToUser(user.ID, *user.FCMToken, "Yüksek RAM!", "RAM kullanımı: %"+fmt.Sprintf("%.1f", stats.RAMPercent), settings.NotificationCooldown, enumNotification.TypeRAMUsage)
 		log.Printf("RAM usage notification sent. RAM usage: %v", stats.RAMPercent)
 	}
 
-	if stats.DiskPercent > defaultThresholds.DiskPercent {
-		s.notificationsService.SendToUser(user.ID, *user.FCMToken, "Disk Doluyor!", "Disk kullanımı: %"+fmt.Sprintf("%.1f", stats.DiskPercent), enumNotification.TypeDiskUsage)
+	if stats.DiskPercent > settings.DISKThreshold {
+		s.notificationsService.SendToUser(user.ID, *user.FCMToken, "Disk Doluyor!", "Disk kullanımı: %"+fmt.Sprintf("%.1f", stats.DiskPercent), settings.NotificationCooldown, enumNotification.TypeDiskUsage)
 		log.Printf("Disk usage notification sent. Disk usage: %v", stats.DiskPercent)
 	}
 

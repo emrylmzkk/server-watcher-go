@@ -18,6 +18,7 @@ func InitDB() (*gorm.DB, error) {
 		&models.MonitoredEntity{},
 		&models.User{},
 		&models.ContainerStatLog{},
+		&models.SSTSettings{},
 	)
 
 	return db, err
