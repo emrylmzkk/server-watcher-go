@@ -21,6 +21,7 @@ type AuthResponseDTO struct {
 
 type UserResponseDTO struct {
 	ID       int                 `json:"id"`
+	Username string              `json:"username"`
 	Name     string              `json:"name"`
 	Surname  string              `json:"surname"`
 	UserRole enumModels.UserRole `json:"user_role"`

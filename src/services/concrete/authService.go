@@ -207,6 +207,7 @@ func (s *authService) GetCurrentUserInformation(ctx context.Context, userId int)
 
 	return &modelsDTOs.UserResponseDTO{
 		ID:       int(user.ID),
+		Username: user.Username,
 		Name:     user.Name,
 		Surname:  user.Surname,
 		UserRole: user.UserRole,
@@ -233,6 +234,7 @@ func (s *authService) GetAllUser(ctx context.Context, userID uint) (*[]modelsDTO
 	for _, user := range dbUsers {
 		users = append(users, modelsDTOs.UserResponseDTO{
 			ID:       int(user.ID),
+			Username: user.Username,
 			Name:     user.Name,
 			Surname:  user.Surname,
 			UserRole: user.UserRole,
