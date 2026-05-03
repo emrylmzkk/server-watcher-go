@@ -12,13 +12,14 @@ func SetupRoutes(app *fiber.App, container *AppContainer) {
 	public.Get("/health", container.PublicHandler.CheckServerCondition)
 
 	auth := api.Group("/auth")
-	auth.Post("/register", container.AuthHandler.Register)
+	auth.Post("/register", container.AuthMiddleware, container.AuthHandler.Register)
 	auth.Post("/login", container.AuthHandler.Login)
 	auth.Post("/refresh-token", container.AuthHandler.RefreshToken)
 	auth.Get("/me", container.AuthMiddleware, container.AuthHandler.GetCurrentUserInformation)
 	auth.Post("/take-fmctoken", container.AuthMiddleware, container.AuthHandler.TakeUserFCMToken)
 	auth.Post("/remove-fcmtoken", container.AuthMiddleware, container.AuthHandler.RemoveUserFCMToken)
 	auth.Post("/users", container.AuthMiddleware, container.AuthHandler.GetAllUsers)
+	auth.Delete("/:id", container.AuthMiddleware, container.AuthHandler.DeleteUser)
 
 	pm2 := api.Group("/pm2", container.AuthMiddleware)
 	pm2.Post("/create", container.Pm2Handler.CreatePm2Project)

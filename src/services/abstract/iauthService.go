@@ -6,7 +6,7 @@ import (
 )
 
 type AuthService interface {
-	Register(ctx context.Context, dto *modelsDTOs.RegisterRequestDTO) (bool, error)
+	Register(ctx context.Context, userID uint, dto *modelsDTOs.RegisterRequestDTO) (bool, error)
 	Login(ctx context.Context, dto *modelsDTOs.LoginRequestDTO) (*modelsDTOs.AuthResponseDTO, error)
 	RefreshToken(ctx context.Context, dto *modelsDTOs.RefreshTokenRequestDTO) (*modelsDTOs.AuthResponseDTO, error)
 	GetCurrentUserInformation(ctx context.Context, userId int) (*modelsDTOs.UserResponseDTO, error)
@@ -14,4 +14,5 @@ type AuthService interface {
 	TakeUserFCMToken(ctx context.Context, userID int, dto *modelsDTOs.UserFCMTokenRequestDTO) (bool, error)
 	RemoveUserFCMToken(ctx context.Context, userID int) (bool, error)
 	GetAllUser(ctx context.Context, userID uint) (*[]modelsDTOs.UserResponseDTO, error)
+	DeleteUser(ctx context.Context, id int, userID uint) (bool, error)
 }

@@ -24,7 +24,13 @@ func NewAuthService(userRepository repositoryConcrete.UserRepository) servicesAb
 	}
 }
 
-func (s *authService) Register(ctx context.Context, dto *modelsDTOs.RegisterRequestDTO) (bool, error) {
+func (s *authService) Register(ctx context.Context, userID uint, dto *modelsDTOs.RegisterRequestDTO) (bool, error) {
+
+	isAdmin, err := s.userRepository.IsUserAdmin(ctx, userID)
+
+	if err != nil || !isAdmin {
+		return false, errors.New("Only the admin can register user")
+	}
 
 	isExist, err := s.userRepository.IsUserExists(ctx, dto.Username)
 
@@ -245,10 +251,16 @@ func (s *authService) DeleteUser(ctx context.Context, id int, userID uint) (bool
 		return false, nil
 	}
 
-	if user.UserRole == enumModels.Admin {
-		return false, errors.New("The delete operation cannot be performed for the Admin user")
+	if user.UserRole != enumModels.Admin {
+		return false, errors.New("Only the admin can delete users")
 	}
 
-	err = s.userRepository.Dlete()
+	err = s.userRepository.Delete(ctx, id)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 
 }

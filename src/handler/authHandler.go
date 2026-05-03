@@ -20,13 +20,19 @@ func NewAuthHandler(authService servicesAbstarct.AuthService) *AuthHandler {
 
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 
+	currentUser := generic.GetCurrentUser(c)
+
+	if currentUser == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(generic.NewErrorResponse("Unauthorized", nil))
+	}
+
 	req, err := generic.ParseBody[modelsDTOs.RegisterRequestDTO](c)
 
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(generic.NewErrorResponse("Invalid request body", err.Error()))
 	}
 
-	res, err := h.authService.Register(c.Context(), req)
+	res, err := h.authService.Register(c.Context(), currentUser.ID, req)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
@@ -141,6 +147,29 @@ func (h *AuthHandler) GetAllUsers(c *fiber.Ctx) error {
 	}
 
 	res, err := h.authService.GetAllUser(c.Context(), currentUser.ID)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(generic.NewSuccessResponse(res))
+
+}
+
+func (h *AuthHandler) DeleteUser(c *fiber.Ctx) error {
+
+	currentUser := generic.GetCurrentUser(c)
+
+	if currentUser == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(generic.NewErrorResponse("Unauthorized", nil))
+	}
+
+	id, err := generic.ParseParam[int](c, "id")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(generic.NewErrorResponse("Invalid request body", err.Error()))
+	}
+
+	res, err := h.authService.DeleteUser(c.Context(), id, currentUser.ID)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(generic.NewErrorResponse("Server Error", err.Error()))
